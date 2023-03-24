@@ -3,8 +3,12 @@
 *.iml
 *.sw*
 *.log
+*.class
+
 logs/
 log/
 
-*.versionsBackup
+target/
+build/
 
+*.versionsBackup
