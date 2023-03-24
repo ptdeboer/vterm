@@ -125,14 +125,14 @@ public class CharRenderer {
         if ((alpha >= 0) && (alpha < 255))
             fg = new Color(fg.getRed(), fg.getGreen(), fg.getBlue(), alpha);
 
-        int charHeight = getLineHeight();
+        int lineHeight = getLineHeight();
         int charWidth = getCharWidth();
 
         // Paint background
         if (paintBackground) {
             imageGraphics.setColor(bg);
             // can use background image here:
-            imageGraphics.fillRect(xpos, ypos, charWidth, charHeight);
+            imageGraphics.fillRect(xpos, ypos, charWidth, lineHeight);
         }
 
         if (!paintForeground)
@@ -161,18 +161,18 @@ public class CharRenderer {
         boolean lowerLine = false;
 
         int charWidth = this.getCharWidth();
-        int charHeight = this.getCharHeight();
+        int lineHeight = this.getLineHeight();
         // middle pixels or pixel near middle in the case of an even char height/width
         // the real middle if between two pixels.
         int midlx = xpos + (charWidth / 2); // middle pixel or the pixel to the left of the middle.
         int midrx = xpos + ((charWidth + 1) / 2); // if charWidth is even right middle pixel != left middel pixel
-        int midhy = ypos + (charHeight / 2);
-        int midly = ypos + ((charHeight + 1) / 2);
+        int midhy = ypos + (lineHeight / 2);
+        int midly = ypos + ((lineHeight + 1) / 2);
         // use one center point left and above logical middle (if even size!).
         midrx = midlx;
         midly = midhy;
         int endx = xpos + charWidth;
-        int endy = ypos + charHeight;
+        int endy = ypos + lineHeight;
 
         double[][] alphaBlends = {//
                 {},
@@ -249,15 +249,15 @@ public class CharRenderer {
             case 'p':
                 leftLine = true;
                 rightLine = true;
-                midhy -= charHeight / 4;
-                midly -= charHeight / 4;
+                midhy -= lineHeight / 4;
+                midly -= lineHeight / 4;
                 break;
             // case q already done
             case 'r':
                 leftLine = true;
                 rightLine = true;
-                midhy += charHeight / 4;
-                midly += charHeight / 4;
+                midhy += lineHeight / 4;
+                midly += lineHeight / 4;
                 break;
             case 's':
                 leftLine = true;
@@ -342,7 +342,7 @@ public class CharRenderer {
 
         // lower left corner to start drawing (above descent):
         int imgx = xpos;
-        int imgy = ypos + getCharHeight() - lineSpacing - fontDescent;// text center start above lower border
+        int imgy = ypos + getLineHeight() - lineSpacing - fontDescent;// text center start above lower border
 
         String encoded;
         encoded = new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
@@ -450,29 +450,12 @@ public class CharRenderer {
         }
     }
 
-    public int getFontCharWidth() {
-        return fontCharWidth;
-    }
 
-    public int getFontCharHeight() {
-        return fontCharHeight;
-    }
 
     public FontInfo getFontInfo() {
         return fontInfo;
     }
 
-    // Space between 'lowest descenders on the glyphs' and baseline.
-    public int getFontDescent() {
-        return fontDescent;
-    }
-
-    /**
-     * Full Line Height =  Character Height + Line Spacing + Font Descent.
-     */
-    public int getLineHeight() {
-        return this.getFontCharHeight() + lineSpacing + getFontDescent();
-    }
 
     public void renderCursor(Graphics graphics, int xpos, int ypos, Color cursorBlinkColor) {
         Color fg = colorMap().getForeground();
@@ -490,12 +473,32 @@ public class CharRenderer {
         return colorMap;
     }
 
+    // Space between 'lowest descenders on the glyphs' and baseline.
+    public int getFontDescent() {
+        return fontDescent;
+    }
+
+    /**
+     * Full Line Height =  Character Height + Line Spacing + Font Descent.
+     */
+    public int getLineHeight() {
+        return this.fontCharHeight + this.lineSpacing + this.fontDescent;
+    }
+
+    public int getFontCharWidth() {
+        return fontCharWidth;
+    }
+
+    public int getFontCharHeight() {
+        return fontCharHeight;
+    }
+
     public int getCharWidth() {
-        return this.getFontCharWidth();
+        return this.fontCharWidth;
     }
 
     public int getCharHeight() {
-        return this.getFontCharHeight();
+        return this.fontCharHeight;
     }
 
 }

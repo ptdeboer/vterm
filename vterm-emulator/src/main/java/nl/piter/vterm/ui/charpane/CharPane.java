@@ -358,7 +358,7 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
         }
 
         int charwidth = this.charRenderer.getCharWidth();
-        int linHeight = this.charRenderer.getLineHeight();
+        int lineHeight = this.charRenderer.getLineHeight();
 
         // ===========
         // Option: rendererWaitForPaint
@@ -415,7 +415,7 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
 
                 for (int x = x1; x < x2; x++) {
                     int xpos = x * charwidth;
-                    int ypos = y * linHeight;
+                    int ypos = y * lineHeight;
 
                     StyleChar sChar = currentBuffer.get(x, y);
 
@@ -439,15 +439,15 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
                     // ====
 
                     boolean paintBackground = true;
-                    boolean paintBackgroundAhead = sChar.isItalic() || sChar.isUberBold();
-
-                    // clear next char
 
                     // previous char was italic: current background has already been draw: don't clear current;
-                    if (paintBackgroundAheadDone)
+                    if (paintBackgroundAheadDone) {
                         paintBackground = false;
+                        paintBackgroundAheadDone = false; // reset (!)
+                    }
 
-                    // ====
+                    // clear next char
+                    boolean paintBackgroundAhead = sChar.isItalic() || sChar.isUberBold();
 
                     // first clear next:
                     if (paintBackgroundAhead) {
