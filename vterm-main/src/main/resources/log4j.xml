@@ -31,10 +31,10 @@
         <appender-ref ref="console"/>
     </logger>
 
-<!--    <logger name="nl.piter.vterm.emulator.VTxTokenizer" additivity="false">-->
-<!--        <level value="info"/>-->
-<!--        <appender-ref ref="console"/>-->
-<!--    </logger>-->
+    <!--    <logger name="nl.piter.vterm.emulator.VTxTokenizer" additivity="false">-->
+    <!--        <level value="info"/>-->
+    <!--        <appender-ref ref="console"/>-->
+    <!--    </logger>-->
 
     <logger name="nl.piter.vterm" additivity="false">
         <level value="info"/>

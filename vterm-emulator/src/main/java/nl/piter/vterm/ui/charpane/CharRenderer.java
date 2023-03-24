@@ -29,12 +29,12 @@ public class CharRenderer {
     // --- instance --- //
 
     // Whether to use own graphics charset renderer instead of the default fonts graphics
-    private boolean optionUseOwnGraphicsCharsetRenderer = true;
-    private boolean optionFatGraphicPipes = true;
+    private final boolean optionUseOwnGraphicsCharsetRenderer = true;
+    private final boolean optionFatGraphicPipes = true;
     private ColorMap colorMap = ColorMap.COLOR_MAP_GREEN_ON_BLACK;
 
     // === Font Metrics and Renderings ===
-    private FontInfo fontInfo;
+    private final FontInfo fontInfo;
     private java.awt.Font fontPlain;
     private int fontDescent;
     private int fontCharWidth;
@@ -42,7 +42,7 @@ public class CharRenderer {
     private Font fontBold;
     private Font fontItalic;
     private Font fontItalicBold;
-    private int lineSpacing = 0; // pixels
+    private final int lineSpacing = 0; // pixels
     private Map<RenderingHints.Key, ?> renderingHints;
 
     public CharRenderer() {
@@ -160,8 +160,8 @@ public class CharRenderer {
         boolean upperLine = false;
         boolean lowerLine = false;
 
-        int charWidth=this.getCharWidth();
-        int charHeight=this.getCharHeight();
+        int charWidth = this.getCharWidth();
+        int charHeight = this.getCharHeight();
         // middle pixels or pixel near middle in the case of an even char height/width
         // the real middle if between two pixels.
         int midlx = xpos + (charWidth / 2); // middle pixel or the pixel to the left of the middle.

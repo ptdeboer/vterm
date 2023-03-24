@@ -106,7 +106,7 @@ public class VTermController implements WindowListener, ComponentListener, Emula
 
     @Override
     public boolean askConfirmation(String message, DialogOption option) {
-        if (option==DialogOption.DIALOG_YES_NO) {
+        if (option == DialogOption.DIALOG_YES_NO) {
             return new Dialogs(vtermFrame).askYesNo(message);
         } else {
             return new Dialogs(vtermFrame).askOkCancel(message);

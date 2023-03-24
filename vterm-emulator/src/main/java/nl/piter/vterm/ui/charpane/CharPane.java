@@ -33,7 +33,7 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
     private int numColumns = 80;
     private int numRows = 24;
     private String characterEncoding = "UTF-8";
-    private String[] charSets = new String[MAX_CHARSETS];
+    private final String[] charSets = new String[MAX_CHARSETS];
     private int charSet = 0;
     // Cursor
     private int cursorX = 0;
@@ -197,7 +197,7 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
             }
 
             // offscreen buffered image:
-            currentImage =  new BufferedImage(getImageWidth(),getImageHeight(), BufferedImage.TYPE_INT_ARGB);
+            currentImage = new BufferedImage(getImageWidth(), getImageHeight(), BufferedImage.TYPE_INT_ARGB);
         }
 
         return true;
@@ -468,7 +468,7 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
 
                     // check/update cursor:
                     if ((showCursor) && (isCursor(x, y))) {
-                        charRenderer.renderCursor(graphics,xpos,ypos,cursorBlinkColor);
+                        charRenderer.renderCursor(graphics, xpos, ypos, cursorBlinkColor);
                     }
                 } // for y
             } // for x
@@ -990,7 +990,7 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
     }
 
     public void setSlowScroll(boolean value) {
-        log.error("FIXME: setSlowScroll():"+value);
+        log.error("FIXME: setSlowScroll():" + value);
     }
 
     public void setCursorOptions(boolean blink) {

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static nl.piter.vterm.emulator.Util.prettyByteString;
 import static nl.piter.vterm.emulator.VTxTokenDefs.CTRL_ESC;
 
 /**
@@ -63,8 +62,8 @@ public class VTxEmulator implements Emulator {
     private String termType;
     private String encoding = "UTF-8";
 
-    private Object haltMutex = new Object();
-    private Object terminateMutex = new Object();
+    private final Object haltMutex = new Object();
+    private final Object terminateMutex = new Object();
 
     private boolean signalHalt = false;
     private boolean signalTerminate = false;
@@ -144,7 +143,7 @@ public class VTxEmulator implements Emulator {
             buf[numread] = 0;
 
             String errstr = new String(buf, 0, numread);
-            log.error("(stderr:){}",errstr);
+            log.error("(stderr:){}", errstr);
         }
 
     }
@@ -482,7 +481,7 @@ public class VTxEmulator implements Emulator {
                 int n = arg1;
                 for (int i = 0; i < n; i++)
                     for (int j = 0; j < state.nr_columns - 1; j++)
-                        term.putChar((byte)0x20, j, y + i);
+                        term.putChar((byte) 0x20, j, y + i);
                 setCursor(x, y);
                 break;
             }
@@ -665,7 +664,7 @@ public class VTxEmulator implements Emulator {
                 sendTermType();
                 break;
             case XTERM_WIN_MANIPULATION: {
-                log.warn("FIXME:Token error:{} with args:{}",token,Arrays.toString(tokenizer.args().intArgs()));
+                log.warn("FIXME:Token error:{} with args:{}", token, Arrays.toString(tokenizer.args().intArgs()));
                 break;
             }
             case ERROR: {

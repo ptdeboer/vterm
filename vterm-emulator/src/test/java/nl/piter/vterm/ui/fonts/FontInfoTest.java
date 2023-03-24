@@ -10,17 +10,18 @@ package nl.piter.vterm.ui.fonts;
 import org.junit.Test;
 
 import java.util.Properties;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FontInfoTest {
 
     @Test
     public void loadProperties() {
-        Properties props=new Properties();
-        props.put(FontConst.FONT_FAMILY,"family");
-        props.put(FontConst.FONT_SIZE,"42");
-        props.put(FontConst.FONT_STYLE,"13");
-        props.put(FontConst.FONT_HAS_ANTIALIASING,true);
+        Properties props = new Properties();
+        props.put(FontConst.FONT_FAMILY, "family");
+        props.put(FontConst.FONT_SIZE, "42");
+        props.put(FontConst.FONT_STYLE, "13");
+        props.put(FontConst.FONT_HAS_ANTIALIASING, true);
 
         FontInfo info = new FontInfo(props);
         assertThat(info.getFontFamily()).isEqualTo("family");
@@ -38,7 +39,7 @@ public class FontInfoTest {
         info.setFontStyle(13);
         info.setAntiAliasing(true);
 
-        Properties props=info.getFontProperties();
+        Properties props = info.getFontProperties();
         assertThat(props.get(FontConst.FONT_FAMILY)).isEqualTo("family");
         assertThat(props.get(FontConst.FONT_SIZE)).isEqualTo(42);
         assertThat(props.get(FontConst.FONT_STYLE)).isEqualTo(13);

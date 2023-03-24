@@ -639,7 +639,7 @@ public class VTermJFrame extends JFrame implements Runnable {
 
     private int getIntOption(Map<String, String> options, String key, int defaultVal) {
         String value = options.get(key);
-        if (value==null) {
+        if (value == null) {
             return defaultVal;
         }
         return Integer.parseInt(value);
@@ -1058,7 +1058,7 @@ public class VTermJFrame extends JFrame implements Runnable {
     protected Properties loadConfigProperties() {
         try {
             Path propFileUri = getPropertiesFile();
-            return SysEnv.sysEnv().loadProperties(propFileUri,true);
+            return SysEnv.sysEnv().loadProperties(propFileUri, true);
         } catch (Exception e) {
             log.warn("Exception: Couldn't load config vterm.prop:" + e.getMessage(), e);
             return new Properties();

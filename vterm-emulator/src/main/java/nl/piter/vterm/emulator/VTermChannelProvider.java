@@ -7,7 +7,10 @@
 //---
 package nl.piter.vterm.emulator;
 
-import nl.piter.vterm.api.*;
+import nl.piter.vterm.api.ShellChannel;
+import nl.piter.vterm.api.ShellChannelFactory;
+import nl.piter.vterm.api.TermChannelOptions;
+import nl.piter.vterm.api.TermUI;
 import nl.piter.vterm.channels.impl.BASHChannelFactory;
 
 import java.io.IOException;

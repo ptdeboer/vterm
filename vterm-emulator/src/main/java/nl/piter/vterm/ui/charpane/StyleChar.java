@@ -31,9 +31,9 @@ public class StyleChar {
     protected int numBytes = 0;
     // color index -1 -> use default fore/back ground
     protected int style = 0;
-    protected  int foregroundColor = -1;
+    protected int foregroundColor = -1;
     protected int backgroundColor = -1;
-    protected  Color customForeground;
+    protected Color customForeground;
     protected String charSet = null; // NAMED charSet ! (if null inheret)
     protected int alpha = 255; // 0=transparent,255=opaque
     // state

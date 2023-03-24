@@ -183,7 +183,7 @@ public class FontInfo {
         props.put(FONT_FAMILY, fontFamily);
         props.put(FONT_SIZE, fontSize);
         props.put(FONT_STYLE, fontStyle);
-        props.put(FONT_HAS_ANTIALIASING,hasAntiAliasing());
+        props.put(FONT_HAS_ANTIALIASING, hasAntiAliasing());
 
         return props;
     }
@@ -223,7 +223,7 @@ public class FontInfo {
     }
 
     private void store() {
-        if (fontRegistry==null) {
+        if (fontRegistry == null) {
             fontRegistry = new Hashtable<>();
         }
         fontRegistry.put(this.fontAlias, this);

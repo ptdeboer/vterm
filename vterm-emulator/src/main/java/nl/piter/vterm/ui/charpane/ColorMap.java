@@ -128,7 +128,7 @@ public class ColorMap extends ArrayList<Color> {
     public static final String GREEN_CONTRAST = "Green";
     public static final String GREEN_SHADED = "Green Shaded";
     public static final String PASTEL_PINK = "Pastel Pink";
-    public static final String[] colorMapNames = {WHITE_CONTRAST, WHITE_SOFT, GREEN_CONTRAST,GREEN_SHADED, PASTEL_PINK};
+    public static final String[] colorMapNames = {WHITE_CONTRAST, WHITE_SOFT, GREEN_CONTRAST, GREEN_SHADED, PASTEL_PINK};
     public static Map<String, ColorMap> colorMaps = null;
 
     // === //

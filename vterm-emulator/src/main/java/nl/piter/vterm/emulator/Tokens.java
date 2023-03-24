@@ -143,11 +143,11 @@ public class Tokens {
         private final boolean terminator;
 
         Token() {
-            this.terminator=true;
+            this.terminator = true;
         }
 
         Token(boolean val) {
-            this.terminator=val;
+            this.terminator = val;
         }
 
         public boolean isTerminator() {

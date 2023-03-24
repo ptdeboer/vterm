@@ -14,8 +14,6 @@ import nl.piter.vterm.exceptions.VTxInvalidConfigurationException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static nl.piter.vterm.emulator.Tokens.Token;
 import static nl.piter.vterm.emulator.Tokens.Token.*;
@@ -197,7 +195,7 @@ public class VTxTokenDefs {
             // --------------------------------------------------------------------------------
             // XGRAPHMODE: No terminator only 'Prefix':
             {CTRL_ESC + "]", OPTION_GRAPHMODE, OSC_GRAPHMODE},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, -1, CSI_PREFIX_START,"Start of CSI Prefix"},
+            {CTRL_CSI_PREFIX, OPTION_INTEGERS, -1, CSI_PREFIX_START, "Start of CSI Prefix"},
             // DEC_PRIVATE terminators: 3 char prefix, must be after 2 char CSI prefix!
             {CTRL_CSI_PREFIX + "?", OPTION_INTEGERS, 'h', DEC_SETMODE},
             {CTRL_CSI_PREFIX + "?", OPTION_INTEGERS, 'l', DEC_RESETMODE},
@@ -298,12 +296,12 @@ public class VTxTokenDefs {
         } else if ((def.length == 4) || (def.length == 5)) {
             chars = def[0].toString();
             option = (TokenOption) def[1];
-            if (def[2]!=null) {
+            if (def[2] != null) {
                 terminatorChar = def[2].toString().charAt(0);
             } else {
                 terminatorChar = null; // prefix token.
             }
-           token = (Token) def[3];
+            token = (Token) def[3];
         } else {
             token = null;
             chars = null;
@@ -313,13 +311,13 @@ public class VTxTokenDefs {
             throw new VTxInvalidConfigurationException("Couldn't parse pattern: " + Arrays.toString(def));
         }
 
-        tokenPatterns.add(TokenDef.createFrom(chars.toCharArray(), option,  terminatorChar, token, tokenDescription));
+        tokenPatterns.add(TokenDef.createFrom(chars.toCharArray(), option, terminatorChar, token, tokenDescription));
     }
 
     public boolean matchPartial(char[] sequence, byte[] pattern, int index) {
 
         // sequence already to long?
-        if ((sequence==null) || index > sequence.length)
+        if ((sequence == null) || index > sequence.length)
             return false;
 
         for (int i = 0; i < index; i++)
@@ -376,7 +374,7 @@ public class VTxTokenDefs {
     public IToken findFirst(byte[] pattern, int patternIndex) {
 
         int index = 0;
-        List<IToken> partials=new ArrayList<>();
+        List<IToken> partials = new ArrayList<>();
 
         do {
             IToken tokenDef = tokenPatterns.get(index);
@@ -401,7 +399,7 @@ public class VTxTokenDefs {
         } while (index < tokenPatterns.size());
 
         // Optionally sort for priority here:
-        if (partials.size()>0) {
+        if (partials.size() > 0) {
             return partials.get(0);
         }
         return null;

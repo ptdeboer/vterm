@@ -145,7 +145,7 @@ public interface CharacterTerminal {
     // --- default interface ---
 
     default void putChar(byte cbyte, int x, int y) {
-        putChar(new byte[]{cbyte},x,y);
+        putChar(new byte[]{cbyte}, x, y);
     }
 
 

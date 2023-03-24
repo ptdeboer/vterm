@@ -13,7 +13,6 @@ import nl.piter.vterm.sys.SysFS;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Path;
 
 @Slf4j

@@ -16,10 +16,14 @@ public interface IToken {
      */
     char[] chars();
 
-    /** Prefix part BEFORE options part. */
+    /**
+     * Prefix part BEFORE options part.
+     */
     char[] prefix();
 
-    /** Full sequence: Prefix + Terminator Char. */
+    /**
+     * Full sequence: Prefix + Terminator Char.
+     */
     char[] full();
 
     Tokens.Token token();
@@ -32,7 +36,7 @@ public interface IToken {
 
     // -- defaults:
     default boolean hasOption() {
-        return (option()!=null);
+        return (option() != null);
     }
 
     default boolean hasPostFix() {

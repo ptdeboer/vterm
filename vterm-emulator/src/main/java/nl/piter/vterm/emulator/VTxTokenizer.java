@@ -73,11 +73,12 @@ public class VTxTokenizer {
         }
 
         public int[] intArgs() {
-            if (this.numIntegerArgs==0) {
+            if (this.numIntegerArgs == 0) {
                 return new int[]{};
             }
-            return Arrays.copyOfRange(this.integerArgs,0,this.numIntegerArgs);
+            return Arrays.copyOfRange(this.integerArgs, 0, this.numIntegerArgs);
         }
+
         public int intArg(int i) {
             if (i < this.numIntegerArgs) {
                 return integerArgs[i];
@@ -108,8 +109,8 @@ public class VTxTokenizer {
         protected Token matchedToken;
         protected IToken matchedIToken;
         //
-        protected char charBuffer[] = new char[16];
-        protected char stringBuffer[] = new char[256];
+        protected char[] charBuffer = new char[16];
+        protected char[] stringBuffer = new char[256];
 
         public void reset() {
             this.escSequence = false;
@@ -137,13 +138,13 @@ public class VTxTokenizer {
         if (readAheadBuffer.size() > 0) {
             return readAheadBuffer.pop();
         } else {
-           return inputStream.read();
+            return inputStream.read();
         }
     }
 
     public void ungetChar(int c) throws IOException {
         if (readAheadBuffer.freeSpace() <= 0) {
-            throw new IOException("ungetChar(): buffer overflow with capacity: "+readAheadBuffer.size());
+            throw new IOException("ungetChar(): buffer overflow with capacity: " + readAheadBuffer.size());
         }
         readAheadBuffer.put((byte) c);
     }
@@ -283,7 +284,7 @@ public class VTxTokenizer {
             }
 
             if ((!fullMatch) && (!prefixMatch)) {
-                state.errorChar=c;
+                state.errorChar = c;
                 break;
             }
 
@@ -430,7 +431,7 @@ public class VTxTokenizer {
 
             String utf8 = new String(utfBytes, StandardCharsets.UTF_8);
             log.info("Is this UTf8? : '{}' => '{}'", Util.prettyByteString(utfBytes), utf8);
-            this.patternBuffer.setBytes(utfBytes,num);
+            this.patternBuffer.setBytes(utfBytes, num);
             return Token.CHAR;
         }
         return null;
@@ -451,10 +452,7 @@ public class VTxTokenizer {
     }
 
     private boolean isChar(int c) {
-        if ((c >= 0x20) && (c <= 0x7f)) {
-            return true;
-        }
-        return false;
+        return (c >= 0x20) && (c <= 0x7f);
     }
 
     private String parseInt() throws IOException {

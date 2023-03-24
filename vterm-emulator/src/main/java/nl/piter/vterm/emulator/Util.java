@@ -81,17 +81,15 @@ public class Util {
         }
 
         public void setBytes(byte[] newBytes, int num) {
-            for (int i=0;i<num;i++) {
-                this.bytes[i] = newBytes[i];
-            }
-            this.index=num;
+            if (num >= 0) System.arraycopy(newBytes, 0, this.bytes, 0, num);
+            this.index = num;
         }
     }
 
     public static String byte2hexstr(int val) {
-        char cs[]=new char[2];
-        cs[0]=(char)(0x30+val%16);
-        cs[1]=(char)(0x30+(val/16)%16);
+        char[] cs = new char[2];
+        cs[0] = (char) (0x30 + val % 16);
+        cs[1] = (char) (0x30 + (val / 16) % 16);
         return new String(cs);
     }
 
@@ -100,7 +98,7 @@ public class Util {
     }
 
     public static String prettyByteString(byte[] bytes, int nrb) {
-        StringBuilder sb=new StringBuilder();
+        StringBuilder sb = new StringBuilder();
 
         sb.append("{");
         for (int i = 0; i < nrb; i++) {

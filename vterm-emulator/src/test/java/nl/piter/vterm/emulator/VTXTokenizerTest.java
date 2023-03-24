@@ -15,7 +15,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -135,7 +134,7 @@ public class VTXTokenizerTest {
 
     @Test
     public void doubleGraphMode() throws IOException {
-        byte[] seq = new byte[]{CTRL_ESC, ']', '0', ';', 'X', 007, CTRL_ESC, ']', '0', ';','Y', 007};
+        byte[] seq = new byte[]{CTRL_ESC, ']', '0', ';', 'X', 007, CTRL_ESC, ']', '0', ';', 'Y', 007};
         List<Tokens.Token> tokens = Arrays.asList(Tokens.Token.OSC_GRAPHMODE, Tokens.Token.OSC_GRAPHMODE);
         List<Integer> values = Arrays.asList(0, 0);
         List<String> strValues = Arrays.asList("X", "Y");
@@ -144,10 +143,10 @@ public class VTXTokenizerTest {
 
     @Test
     public void decSetModeMulti() throws IOException {
-        byte seq[]=new byte[]{CTRL_ESC, '[', '?', '1', 'h',CTRL_ESC, '[', '?', '2', 'l'};
+        byte[] seq = new byte[]{CTRL_ESC, '[', '?', '1', 'h', CTRL_ESC, '[', '?', '2', 'l'};
         List<Tokens.Token> tokens = Arrays.asList(Tokens.Token.DEC_SETMODE, Tokens.Token.DEC_RESETMODE);
         List<Integer> values = Arrays.asList(1, 2);
-        List<String> strValues = Arrays.asList();
+        List<String> strValues = List.of();
         testSequence(seq, tokens, values, strValues);
     }
 
@@ -159,12 +158,12 @@ public class VTXTokenizerTest {
         for (int i = 0; i < tokens.size(); i++) {
             Tokens.Token expectedToken = tokens.get(i);
             Tokens.Token token = tokenizer.nextToken();
-            log.debug("Verifying token #{}:{} vs {}",i,token,expectedToken);
+            log.debug("Verifying token #{}:{} vs {}", i, token, expectedToken);
             assertThat(token).isEqualTo(expectedToken);
-            if (intValues.size()>0) {
+            if (intValues.size() > 0) {
                 assertThat(tokenizer.args().intArg(0)).isEqualTo(intValues.get(i));
             }
-            if (strValues.size()>0) {
+            if (strValues.size() > 0) {
                 assertThat(tokenizer.args().strArg()).isEqualTo(strValues.get(i));
             }
         }
