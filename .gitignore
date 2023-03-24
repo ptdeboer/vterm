@@ -1,0 +1,10 @@
+
+*.idea/
+*.iml
+*.sw*
+*.log
+logs/
+log/
+
+*.versionsBackup
+
