@@ -24,6 +24,6 @@ Start
 ---
 From the vterm-main module start the vterm script:
 
-    ./vterm-main/target/vterm-main-2.1.3-dist/bin/vterm.sh
+    ./vterm-main/target/vterm-main-2.2.0-dist/bin/vterm.sh
 
 (Version might differ).
