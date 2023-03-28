@@ -11,9 +11,12 @@ import com.jcraft.jsch.UIKeyboardInteractive;
 import com.jcraft.jsch.UserInfo;
 import lombok.extern.slf4j.Slf4j;
 import nl.piter.vterm.api.TermUI;
+import nl.piter.vterm.emulator.Util;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static nl.piter.vterm.emulator.Util.null2empty;
 
 @Slf4j
 public class UIForwarder implements UserInfo, UIKeyboardInteractive {
@@ -26,12 +29,14 @@ public class UIForwarder implements UserInfo, UIKeyboardInteractive {
 
     @Override
     public String getPassphrase() {
-        return ui.askInput("Please provide passphrase", "passphrase", true);
+        // jsch doesn't like nullpointers:
+        return null2empty(ui.askInput("Please provide passphrase", "passphrase", true));
     }
 
     @Override
     public String getPassword() {
-        return ui.askInput("Please provide password", "password", true);
+        // jsch doesn't like nullpointers:
+        return null2empty(ui.askInput("Please provide password", "password", true));
     }
 
     @Override
@@ -67,7 +72,7 @@ public class UIForwarder implements UserInfo, UIKeyboardInteractive {
 
         for (int i = 0; i < prompts.length; i++) {
             String answer = this.ui.askInput(msg + ":" + prompts[i], prompts[i], !echo[i]);
-            answers.add(answer);
+            answers.add(null2empty(answer));
         }
 
         return answers.toArray(new String[0]);

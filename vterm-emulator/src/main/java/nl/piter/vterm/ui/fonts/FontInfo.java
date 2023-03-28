@@ -46,16 +46,16 @@ public class FontInfo {
 
         // Current hardcoded ones:
         if (alias.compareToIgnoreCase(FONT_ICON_LABEL) == 0) {
-            Font font = new Font("dialog", 0, 11);
+            Font font = new Font("dialog", 0, 14);
             return store(font, FONT_ICON_LABEL);
         } else if (alias.compareToIgnoreCase(FONT_DIALOG) == 0) {
-            Font font = new Font("dialog", 0, 11);
+            Font font = new Font("dialog", 0, 14);
             return store(font, FONT_DIALOG);
         } else if (alias.compareToIgnoreCase(FONT_MONO_SPACED) == 0) {
-            Font font = new Font("monospaced", 0, 12);
+            Font font = new Font("monospaced", 0, 16);
             return store(font, FONT_MONO_SPACED);
         } else if (alias.compareToIgnoreCase(FONT_TERMINAL) == 0) {
-            Font font = new Font("monospaced", 0, 12);
+            Font font = new Font("monospaced", 0, 16);
             FontInfo newInfo = store(font, FONT_MONO_SPACED);
             newInfo.setAntiAliasing(true);
             return newInfo;

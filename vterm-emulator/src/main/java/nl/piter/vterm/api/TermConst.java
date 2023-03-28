@@ -18,6 +18,19 @@ public class TermConst {
     public final static String XTERM_256COLOR = "xterm-256color";
     final public static String TERM_VT100 = "vt100";
 
+    public enum CharSet {
+        CHARSET_GRAPHICS,
+        CHARSET_UK,
+        CHARSET_US,
+        CHARSET_DUTCH,
+        CHARSET_FINNISH,
+        CHARSET_FRENCH,
+        CHARSET_GERMAN,
+        CHARSET_SWEDISH,
+        CHARSET_NORDANISH,
+        CHARSET_OTHER
+    }
+
     private TermConst() {
     }
 

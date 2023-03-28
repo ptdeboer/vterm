@@ -53,6 +53,10 @@ public class BASHChannel implements ShellChannel {
         return errs;
     }
 
+    public String getType() {
+        return "BASH";
+    }
+
     @Override
     public void connect() throws IOException {
         log.info("Connecting to OS:{}", SysEnv.sysEnv().getOsName());
@@ -67,6 +71,7 @@ public class BASHChannel implements ShellChannel {
             if (SysEnv.sysEnv().isLinux()) {
                 // linux executable .lxe :-)
                 cmds.add(getExePath("ptty.lxe"));
+
             } else if (SysEnv.sysEnv().isWindows()) {
                 cmds.add(getExePath("ptty.exe"));
             } else {
@@ -171,7 +176,7 @@ public class BASHChannel implements ShellChannel {
     }
 
     @Override
-    public boolean setPtyTermSize(int col, int row, int wp, int hp) {
+    public boolean sendPtyTermSize(int col, int row, int wp, int hp) {
         log.warn("Can't set TERM size to:[{},{},{},{}]", col, row, wp, hp);
 //        try {
 //            // \033[8;h;wt

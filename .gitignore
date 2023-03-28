@@ -10,5 +10,8 @@ log/
 
 target/
 build/
+dist/
+dist
 
 *.versionsBackup
+

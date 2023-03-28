@@ -7,6 +7,9 @@
 //---
 package nl.piter.vterm.api;
 
+/**
+ * Callback interface to VTerm UI.
+ */
 public interface TermUI {
 
     enum DialogOption {
@@ -19,5 +22,8 @@ public interface TermUI {
     boolean askConfirmation(String message, DialogOption option);
 
     String askInput(String message, String type, boolean isSecret);
+
+    void showError(Throwable ex);
+
 
 }

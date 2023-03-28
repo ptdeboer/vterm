@@ -9,15 +9,14 @@ package nl.piter.vterm.api;
 
 public interface EmulatorListener {
 
+    void emulatorStarted();
+
+    void emulatorStopped();
+
     /**
      * When a XTerm (OSC) GraphMode update was received
      */
-    void notifyGraphMode(int type, String arg);
-
-    /**
-     * When the CharacterSet has changed.
-     */
-    void notifyCharSet(String charSet);
+    void notifyTermTitle(int type, String arg);
 
     /**
      * Is send AFTER the terminal has been resized. CharPanel already has updated it size.

@@ -5,24 +5,23 @@
  *     See LICENSE.txt for details.
  */
 //---
-package nl.piter.vterm.ui.panel;
+package nl.piter.vterm.ui.panels;
 
 import nl.piter.vterm.api.CharacterTerminal;
 import nl.piter.vterm.emulator.Emulator;
-import nl.piter.vterm.ui.charpane.CharPane;
-import nl.piter.vterm.ui.charpane.ColorMap;
 import nl.piter.vterm.ui.fonts.FontInfo;
+import nl.piter.vterm.ui.panels.charpane.CharPane;
+import nl.piter.vterm.ui.panels.charpane.ColorMap;
 
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
 import java.awt.*;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 
 /**
- * TermPanel which contains and manages a CharPane
+ * TermPanel is the Container which manages the CharPane JComponent.
  */
-public class TermPanel extends JPanel implements ComponentListener {
+public class VTermPanel extends JPanel implements ComponentListener {
 
     public final static String[] splashText = {
             "  ***   VTerm VT100+/xterm Emulator ***  ",
@@ -33,9 +32,12 @@ public class TermPanel extends JPanel implements ComponentListener {
     private EmulatorKeyMapper keyMapper;
     private Emulator emulator;
 
+    public VTermPanel() {
+        super();
+        initGUI();
+    }
+
     public void initGUI() {
-        // JPanel 
-        this.setBorder(new BevelBorder(BevelBorder.RAISED));
         this.enableEvents(AWTEvent.KEY_EVENT_MASK);
         // unset focus, must get TAB chars: 
         this.setFocusTraversalKeysEnabled(false);
@@ -65,18 +67,7 @@ public class TermPanel extends JPanel implements ComponentListener {
 
     @Override // ComponentListener
     public void componentResized(ComponentEvent e) {
-        // this component or parent has been resized/ 
-        // the layout manager resize the charpane, so
-        // now the internal text buffers have to be updated. 
-
-        if (!e.getSource().equals(charPane))
-            return;
-
-        // get actual component size which is not the text buffer image size ! 
-        Dimension size = charPane.getSize();
-
-        // update internal character buffer size: 
-        charPane.resizeTextBuffersToAWTSize(size);
+        // resize now handled at VTermController.
     }
 
     @Override // ComponentListener
@@ -93,30 +84,6 @@ public class TermPanel extends JPanel implements ComponentListener {
 
     public FontInfo getFontInfo() {
         return charPane.getFontInfo();
-    }
-
-    public void dispose() {
-        terminate();
-
-        if (charPane != null)
-            charPane.dispose();
-        charPane = null;
-
-        this.keyMapper = null;
-        this.emulator = null;
-    }
-
-    public void terminate() {
-        inactivate();
-
-        if (emulator != null) {
-            emulator.signalTerminate();
-
-            // unregister keymapper:
-            if (keyMapper != null) {
-                this.removeKeyListener(keyMapper);
-            }
-        }
     }
 
     public void updateFontSize(Integer val, boolean resetGraphics) {
@@ -142,12 +109,18 @@ public class TermPanel extends JPanel implements ComponentListener {
             int offx = 20;
             int offy = 8;
 
+            int lasty = 0;
+            int lastx = 0;
             for (int y = 0; y < splashText.length; y++) {
                 String line = splashText[y];
                 charPane.putString(line, offx, offy + y);
+                lasty = offy + y;
+                lastx = offx + line.length();
             }
+            charPane.setCursor(lastx + 1, lasty);
+            charPane.setCursorOptions(true);
         }
-        charPane.paintTextBuffer();
+        charPane.renderTextBuffer(true);
         charPane.repaint();
     }
 
@@ -167,19 +140,6 @@ public class TermPanel extends JPanel implements ComponentListener {
 
     public void clearAll() {
         this.charPane.clear();
-    }
-
-    public boolean getSynchronizedScrolling() {
-        String str = this.charPane.getOption(CharPane.OPTION_ALWAYS_SYNCHRONIZED_SCROLLING);
-
-        if (str != null)
-            return Boolean.parseBoolean(str);
-
-        return false;
-    }
-
-    public void setSynchronizedScrolling(boolean val) {
-        charPane.setOption(CharPane.OPTION_ALWAYS_SYNCHRONIZED_SCROLLING, "" + val);
     }
 
     public void reset() {
@@ -210,6 +170,38 @@ public class TermPanel extends JPanel implements ComponentListener {
         this.emulator = emulator;
         this.keyMapper = new EmulatorKeyMapper(emulator);
         this.addKeyListener(keyMapper);
+    }
+
+    public void terminate() {
+        inactivate();
+
+        if (emulator != null) {
+            emulator.signalTerminate();
+
+            // unregister keymapper:
+            if (keyMapper != null) {
+                this.removeKeyListener(keyMapper);
+            }
+        }
+    }
+
+    public void dispose() {
+        terminate();
+
+        if (charPane != null)
+            charPane.dispose();
+        charPane = null;
+
+        this.keyMapper = null;
+        this.emulator = null;
+    }
+
+    public void resizeTerminalToAWTSize() {
+        charPane.resizeTextBuffersToAWTSize();
+    }
+
+    public Dimension getTerminalSize() {
+        return new Dimension(this.getColumnCount(),this.getRowCount());
     }
 
 }

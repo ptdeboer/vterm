@@ -9,6 +9,8 @@ package nl.piter.vterm.emulator.tokens;
 
 import nl.piter.vterm.emulator.Tokens;
 
+import java.nio.charset.StandardCharsets;
+
 public interface IToken {
 
     /**
@@ -30,11 +32,11 @@ public interface IToken {
 
     Tokens.TokenOption option();
 
-    Character terminator();
+    char[] terminator();
 
     String description();
 
-    // -- defaults:
+    // -- defaults -- //
     default boolean hasOption() {
         return (option() != null);
     }
@@ -42,4 +44,9 @@ public interface IToken {
     default boolean hasPostFix() {
         return (terminator() != null);
     }
+
+    default byte[] getBytes() {
+        return new String(chars()).getBytes(StandardCharsets.UTF_8);
+    }
+
 }

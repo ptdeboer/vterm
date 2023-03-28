@@ -9,20 +9,25 @@ package nl.piter.vterm.ui;
 
 import nl.piter.vterm.api.EmulatorListener;
 import nl.piter.vterm.api.TermUI;
-import nl.piter.vterm.ui.panel.Dialogs;
+import nl.piter.vterm.ui.panels.Dialogs;
+import nl.piter.vterm.ui.panels.VTermPanel;
 
+import java.awt.*;
 import java.awt.event.*;
 
-import static nl.piter.vterm.util.StringUtil.isEmpty;
+import static nl.piter.vterm.emulator.Util.isEmpty;
 
+/**
+ * VTermController: controles, { CharacterTerminal, Emulator }
+ */
 public class VTermController implements WindowListener, ComponentListener, EmulatorListener,
         ActionListener, TermUI {
 
-    private final VTermJFrame vtermFrame;
+    private final VTermFrame vtermFrame;
     private String shortTitle;
     private String longTitle;
 
-    public VTermController(VTermJFrame vtermFrame) {
+    public VTermController(VTermFrame vtermFrame) {
         this.vtermFrame = vtermFrame;
     }
 
@@ -34,14 +39,16 @@ public class VTermController implements WindowListener, ComponentListener, Emula
 
     public void componentResized(ComponentEvent e) {
         if (e.getSource() == vtermFrame.getTerminalPanel()) {
-            vtermFrame.sendTermSize(vtermFrame.getTerminalPanel().getColumnCount(), vtermFrame.getTerminalPanel().getRowCount());
+            vtermFrame.getVTermManager().resizeTerminalToAWT();
+            Dimension size=vtermFrame.getTerminalPanel().getTerminalSize();
+            vtermFrame.statusPanel().setStatusSize(size.width,size.height);
         }
     }
 
     public void componentShown(ComponentEvent e) {
     }
 
-    public void notifyGraphMode(int type, String arg) {
+    public void notifyTermTitle(int type, String arg) {
         if (type == 1)
             this.shortTitle = arg;
         else
@@ -61,9 +68,10 @@ public class VTermController implements WindowListener, ComponentListener, Emula
             sb.append(longTitle);
         }
         vtermFrame.setTitle(sb.toString());
+        vtermFrame.statusPanel().setStatus(shortTitle + ":" + longTitle);
     }
 
-    public void notifyCharSet(String charSet) {
+    public void notifyCharSet(int nr, String charSet) {
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -95,7 +103,8 @@ public class VTermController implements WindowListener, ComponentListener, Emula
     }
 
     public void notifyResized(int columns, int rows) {
-        // CharPane has already been resized: Update frame!
+        // This is a notification from the Emulator, Not AWT:
+        vtermFrame.statusPanel().setStatusSize(columns,rows);
         vtermFrame.updateFrameSize();
     }
 
@@ -120,6 +129,20 @@ public class VTermController implements WindowListener, ComponentListener, Emula
         } else {
             return new Dialogs(vtermFrame).askForSecret("" + type, message);
         }
+    }
+
+    @Override
+    public void emulatorStarted() {
+        vtermFrame.emulatorStarted();
+    }
+
+    @Override
+    public void emulatorStopped() {
+        vtermFrame.emulatorStopped();
+    }
+
+    public void showError(Throwable e) {
+        new Dialogs(vtermFrame).showException(e);
     }
 
 }

@@ -5,7 +5,9 @@
  *     See LICENSE.txt for details.
  */
 //---
-package nl.piter.vterm.ui.charpane;
+package nl.piter.vterm.ui.panels.charpane;
+
+import lombok.EqualsAndHashCode;
 
 import java.awt.*;
 
@@ -13,17 +15,25 @@ import java.awt.*;
  * Styled Character.
  * Holder for the character buffer. Keeps char, style color + charset (name).
  */
+// Important: for the render cache to work, the StyleChar hashcode() and equals() must be defined.
+@EqualsAndHashCode
 public class StyleChar {
 
     public static final int STYLE_NONE = 0x0000;
-    public static final int STYLE_BOLD = 0x0001 << 1;
-    public static final int STYLE_ITALIC = 0x0001 << 2;
-    public static final int STYLE_INVERSE = 0x0001 << 3;
-    public static final int STYLE_UNDERSCORE = 0x0001 << 4;
-    public static final int STYLE_UBERBOLD = 0x0001 << 05;
-    public static final int STYLE_BLINK = 0x0001 << 06;
-    public static final int STYLE_HIDDEN = 0x0001 << 07;
-
+    // ECMA order: bitnr 1-9 = SGR nr 1-9.
+    public static final int STYLE_BOLD = 0x01 << 1;
+    public static final int STYLE_FAINT = 0x01 << 2;
+    public static final int STYLE_ITALIC = 0x01 << 3;
+    public static final int STYLE_UNDERSCORE = 0x01 << 4;
+    public static final int STYLE_SLOW_BLINK = 0x01 << 5;
+    public static final int STYLE_FAST_BLINK = 0x01 << 6;
+    public static final int STYLE_INVERSE = 0x01 << 7;
+    public static final int STYLE_HIDDEN = 0x01 << 8;
+    public static final int STYLE_STRIKETHROUGH = 0x01 << 9;
+    // misc
+    public static final int STYLE_UBERBOLD = 0x01 <<10;
+    public static final int STYLE_DOUBLE_UNDERSCORE = 0x0001 << 11;
+    public static final int STYLE_FRAKTUR = 0x0001 << 13;
     // =====================================================
 
     protected int MAX_BYTES = 8;
@@ -34,6 +44,7 @@ public class StyleChar {
     protected int foregroundColor = -1;
     protected int backgroundColor = -1;
     protected Color customForeground;
+    protected Color customBackground;
     protected String charSet = null; // NAMED charSet ! (if null inheret)
     protected int alpha = 255; // 0=transparent,255=opaque
     // state
@@ -44,9 +55,11 @@ public class StyleChar {
         this.style = schar.style;
         this.backgroundColor = schar.backgroundColor;
         this.foregroundColor = schar.foregroundColor;
+        this.customForeground = schar.customForeground;
+        this.customBackground = schar.customBackground;
         this.charSet = schar.charSet;
-        this.hasChanged = true; //
         this.alpha = schar.alpha;
+        this.hasChanged = true;
     }
 
     public void setBytes(byte[] bytes) {
@@ -70,6 +83,7 @@ public class StyleChar {
         foregroundColor = -1;
         backgroundColor = -1;
         customForeground = null;
+        customBackground =null;
         hasChanged = true; // needs redraw
         charSet = null;
         alpha = -1;
@@ -119,5 +133,23 @@ public class StyleChar {
     public boolean isChar(char c) {
         return this.numBytes == 1 && (charBytes[0] == c);
     }
+
+
+//    // --- Generated --- //
+//
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o) return true;
+//        if (o == null || getClass() != o.getClass()) return false;
+//        StyleChar styleChar = (StyleChar) o;
+//        return MAX_BYTES == styleChar.MAX_BYTES && numBytes == styleChar.numBytes && style == styleChar.style && foregroundColor == styleChar.foregroundColor && backgroundColor == styleChar.backgroundColor && alpha == styleChar.alpha && hasChanged == styleChar.hasChanged && Arrays.equals(charBytes, styleChar.charBytes) && Objects.equals(customForeground, styleChar.customForeground) && Objects.equals(charSet, styleChar.charSet);
+//    }
+//
+//    @Override
+//    public int hashCode() {
+//        int result = Objects.hash(MAX_BYTES, numBytes, style, foregroundColor, backgroundColor, customForeground, charSet, alpha, hasChanged);
+//        result = 31 * result + Arrays.hashCode(charBytes);
+//        return result;
+//    }
 
 }

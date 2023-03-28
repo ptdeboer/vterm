@@ -12,7 +12,7 @@ Remastered version V2.0
 Origin
 ---
 Started in 2005, this VTerm emulator has been part of VL-e's VBrowser and Platinum's VBrowser 2.0.
-This is now a stand-alone Component.
+This is now a stand-alone component.
 
 
 Build
@@ -24,6 +24,6 @@ Start
 ---
 From the vterm-main module start the vterm script:
 
-    ./vterm-main/target/vterm-main-2.1.1-dist/bin/vterm.sh
+    ./vterm-main/target/vterm-main-2.1.3-dist/bin/vterm.sh
 
 (Version might differ).

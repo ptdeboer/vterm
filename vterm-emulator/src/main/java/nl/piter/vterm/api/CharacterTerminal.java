@@ -7,23 +7,26 @@
 //---
 package nl.piter.vterm.api;
 
-import nl.piter.vterm.ui.charpane.ColorMap;
+import nl.piter.vterm.ui.panels.charpane.ColorMap;
 
 import java.awt.*;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Interface to a Character Terminal.
  */
 public interface CharacterTerminal {
 
-    // VT100 CharSets:
-    String VT_CHARSET_US = "CHARSET_US";
-    String VT_CHARSET_UK = "CHARSET_UK";
-    String VT_CHARSET_GRAPHICS = "CHARSET_GRAPHICS";
-
     int getNumRows();
 
     int getNumColumns();
+
+    /**
+     * Set the nr of columns. This will initiate a resize.
+     */
+    void setColumns(int cols);
+
+    void setColumnsAndRows(int cols, int rows);
 
     void setCursor(int x, int y);
 
@@ -32,45 +35,34 @@ public interface CharacterTerminal {
     int getCursorX();
 
     /**
-     * Write char at current cursor position. Auto moves cursor to the right.
+     * Write char at current cursor position. Does not move cursor.
      */
     void writeChar(byte[] bytes);
 
     /**
-     * Put utf-8 character sequence, redrawing might occur later
+     * Put single char or utf-8 character sequence.
      */
     void putChar(byte[] bytes, int x, int y);
 
     void move(int startX, int startY, int width, int height, int toX, int toY);
 
     /**
-     * Clear text buffer(s), does not reset graphics
+     * Clear text buffer(s), does not reset graphics.
      */
-    void clearText();
+    void clearArea();
 
     void clearArea(int x1, int y1, int x2, int y2);
 
     /**
-     * Reset graphics, internal state and clear text buffers
+     * Reset graphics, internal state and clear text buffers.
      */
     void reset();
 
     void beep();
 
-    Color getForeground();
+    void setColor(int num, Color color);
 
-    /**
-     * Default foreground color
-     */
-    void setForeground(Color color);
-
-    Color getBackground();
-
-    /**
-     * Default background color
-     */
-    void setBackground(Color color);
-
+    Color getColor(int num);
 
     /**
      * Add style flags by performing a logical OR with current style and new style.
@@ -99,6 +91,10 @@ public interface CharacterTerminal {
      */
     void setDrawForeground(int nr);
 
+    void setDrawForeground(int r, int g, int b);
+
+    void setDrawBackground(int r, int g, int b);
+
     /**
      * Color map for indexed color codes. If draw style==0 then default background/foreground will
      * be used.
@@ -115,20 +111,20 @@ public interface CharacterTerminal {
      */
     void setCharSet(int nr);
 
+    int getCharSet();
+
     /**
      * Set charset.
      */
     void setCharSet(int i, String str);
 
-    /**
-     * Enable cursor
-     */
+    String getCharSetName(int i);
+
     void setEnableCursor(boolean value);
 
-    /**
-     * Set the nr of columns. This will initiate a resize.
-     */
-    void setColumns(int i);
+    void setCursorOptions(boolean blink);
+
+    CursorOptions getCursorStatus();
 
     /**
      * Switch to alternate text buffer. Returns false if not supported or failed to do so.
@@ -136,17 +132,28 @@ public interface CharacterTerminal {
     boolean setAltScreenBuffer(boolean value);
 
     /**
-     * Synchronized scrolling.
+     * 0=normal, 1 =alt
      */
-    void setSlowScroll(boolean value);
+    int getScreenBufferNr();
 
-    void setCursorOptions(boolean blink);
+    void setReverseVideo(boolean value);
+
+    /**
+     * Character size in pixel. Chararacter height is total Line Height. Not Font Height.
+     */
+    Dimension getCharacterSize();
 
     // --- default interface ---
 
-    default void putChar(byte cbyte, int x, int y) {
-        putChar(new byte[]{cbyte}, x, y);
+    default void putChar(char optUtf, int x, int y) {
+        putChar(Character.toString(optUtf).getBytes(StandardCharsets.UTF_8), x, y);
     }
 
+    default void setCharSet(int nr, TermConst.CharSet mapCharSet) {
+        this.setCharSet(nr, mapCharSet.toString());
+    }
 
+    default void unsetDrawStyle(int style) {
+        setDrawStyle(getDrawStyle() & ~style);
+    }
 }

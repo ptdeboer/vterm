@@ -5,7 +5,7 @@
  *     See LICENSE.txt for details.
  */
 //---
-package nl.piter.vterm;
+package nl.piter.vterm.sys;
 
 
 import lombok.extern.slf4j.Slf4j;

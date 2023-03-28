@@ -7,46 +7,39 @@
 //---
 package nl.piter.vterm.api;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static nl.piter.vterm.api.TermConst.TERM_XTERM;
+import static nl.piter.vterm.api.TermConst.XTERM_256COLOR;
 
 /**
  * Generic options.
  */
 @Data
+@Builder
+@AllArgsConstructor
 public class TermChannelOptions {
 
-    private final Map<String, String> options = new HashMap<>();
+    public static TermChannelOptions create() {
+        return TermChannelOptions.builder()
+                .defaultColumns(24)
+                .defaultRows(24).termType(XTERM_256COLOR)
+                .build();
+    }
 
-    // common //
+    // fields:
     private int defaultRows;
     private int defaultColumns;
-    private String termType = TERM_XTERM;
-
-    public TermChannelOptions() {
-        this.defaultRows = 24;
-        this.defaultColumns = 80;
-    }
+    private String termType;
+    private final Map<String, String> options = new HashMap<>();
 
     public void setDefaultSize(int rows, int columns) {
         this.defaultRows = rows;
         this.defaultColumns = columns;
-    }
-
-    public String getTermType() {
-        return termType;
-    }
-
-    public int getDefaultRows() {
-        return this.defaultRows;
-    }
-
-    public int getDefaultColumns() {
-        return this.defaultColumns;
     }
 
     /**

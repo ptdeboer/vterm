@@ -20,8 +20,8 @@ import java.util.Map;
 
 public class VTermChannelProvider {
 
-    protected Map<String, ShellChannelFactory> factories = new Hashtable<String, ShellChannelFactory>();
-    protected Map<String, TermChannelOptions> defaultOptions = new Hashtable<String, TermChannelOptions>();
+    protected Map<String, ShellChannelFactory> factories = new Hashtable<>();
+    protected Map<String, TermChannelOptions> defaultOptions = new Hashtable<>();
 
     public VTermChannelProvider() {
         this.registerChannelFactory("BASH", new BASHChannelFactory());

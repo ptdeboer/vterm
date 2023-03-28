@@ -5,26 +5,32 @@
  *     See LICENSE.txt for details.
  */
 //---
-package nl.piter.vterm.ui.charpane;
+package nl.piter.vterm.ui.panels.charpane;
 
+import lombok.extern.slf4j.Slf4j;
+import nl.piter.vterm.api.TermConst;
 import nl.piter.vterm.ui.fonts.FontConst;
 import nl.piter.vterm.ui.fonts.FontInfo;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.WritableRaster;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Character and graphics renderer for a single cell (character).
  */
+@Slf4j
 public class CharRenderer {
 
     // Graphics Set:Reverse engineered from xterm codes:
     // echo <ESC>")0"<CTRL-N>"abcdefghijklmnopqrstuvwxyz"<CTRL-O>
     // Note, java uses 16-bit chars, following strings are utf-8 (!)
-    public final static String graphOrg0 = "abcdefghijklmnopqrstuvwxyz";
-    public final static String graphSet1 = "▒␉␌␍␊°±␤␋┘┐┌└┼⎺⎻─⎼⎽├┤┴┬│≤≥";
+    public final static String graphOrg0 = "_`abcdefghijklmnopqrstuvwxyz";
+    public final static String graphSet1 = " ◆▒␉␌␍␊°±␤␋┘┐┌└┼⎺⎻─⎼⎽├┤┴┬│≤≥";
 
     // --- instance --- //
 
@@ -36,14 +42,16 @@ public class CharRenderer {
     // === Font Metrics and Renderings ===
     private final FontInfo fontInfo;
     private java.awt.Font fontPlain;
-    private int fontDescent;
     private int fontCharWidth;
+    private int fontDescent;
+    private int fontAscent;
     private int fontCharHeight;
     private Font fontBold;
     private Font fontItalic;
     private Font fontItalicBold;
-    private final int lineSpacing = 0; // pixels
+    private final int lineLeading = 0; // pixels
     private Map<RenderingHints.Key, ?> renderingHints;
+
 
     public CharRenderer() {
         // initialize font metrics:
@@ -77,18 +85,34 @@ public class CharRenderer {
         graphics.dispose();
         FontMetrics metrics = graphics.getFontMetrics();
         this.fontDescent = metrics.getDescent();
+        this.fontAscent = metrics.getAscent();
         this.fontCharHeight = metrics.getHeight();
+
         // biggest char on the block:
         this.fontCharWidth = metrics.charWidth('W');
         renderingHints = finfo.getRenderingHints();
         dummyImage.flush();
     }
 
+    void renderChar(Graphics2D imageGraphics, StyleChar sChar, int xpos, int ypos, boolean paintBackground, boolean paintForeground) {
+        renderTemplate(imageGraphics, sChar, xpos, ypos, paintBackground, paintForeground);
+    }
+
+    protected BufferedImage duplicate(BufferedImage image) {
+        ColorModel cm = image.getColorModel();
+        boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+        WritableRaster raster = image.copyData(null);
+        return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
+    }
+
+    protected int createHash(StyleChar sChar, boolean paintBackground, boolean paintForeground) {
+        return Objects.hash(sChar, paintBackground, paintForeground);
+    }
+
     /**
      * Render single character (cell) in imageGraphics
      */
-    void renderChar(Graphics imageGraphics, StyleChar sChar,
-                    int xpos, int ypos, boolean paintBackground, boolean paintForeground) {
+    void renderTemplate(Graphics2D imageGraphics, StyleChar sChar, int xpos, int ypos, boolean paintBackground, boolean paintForeground) {
         int style = sChar.style;
 
         // check indexed colors!
@@ -99,11 +123,15 @@ public class CharRenderer {
             fg = sChar.customForeground;
         }
 
+        if (sChar.customBackground != null) {
+            bg = sChar.customBackground;
+        }
+
         if (fg == null)
-            fg = this.colorMap.getForeground();
+            fg = this.getEffectiveForeground();
 
         if (bg == null)
-            bg = this.colorMap.getBackground();
+            bg = this.getEffectiveBackground();
 
         if ((style & StyleChar.STYLE_INVERSE) > 0) {
             // swap bg/fg
@@ -115,6 +143,9 @@ public class CharRenderer {
         // optional alpha level:
         int alpha = sChar.alpha;
 
+        // HIDDEN / FAINT
+        if ((style & StyleChar.STYLE_FAINT) > 0)
+            alpha = 128;
         // Hidden => fixed alpha of 25%;
         if ((style & StyleChar.STYLE_HIDDEN) > 0)
             alpha = 64;
@@ -150,7 +181,15 @@ public class CharRenderer {
 
     }
 
-    private void renderGraphicsChar(Graphics imageGraphics, StyleChar schar,
+    public Color getEffectiveForeground() {
+        return colorMap.getForeground();
+    }
+
+    public Color getEffectiveBackground() {
+        return colorMap.getBackground();
+    }
+
+    private void renderGraphicsChar(Graphics2D imageGraphics, StyleChar schar,
                                     Color fg, Color bg, int xpos, int ypos) {
         // 8-bits to 16-bits:
         char c = (char) schar.charBytes[0];
@@ -333,7 +372,7 @@ public class CharRenderer {
         }
     }
 
-    private void renderPlainChar(Graphics imageGraphics, StyleChar schar,
+    private void renderPlainChar(Graphics2D imageGraphics, StyleChar schar,
                                  Color fg, Color bg, int xpos, int ypos) {
         //
         int style = schar.style;
@@ -342,16 +381,17 @@ public class CharRenderer {
 
         // lower left corner to start drawing (above descent):
         int imgx = xpos;
-        int imgy = ypos + getLineHeight() - lineSpacing - fontDescent;// text center start above lower border
-
+        int basey = ypos + getLineHeight() - fontDescent;// text center start above lower border
+        int midy = basey - fontAscent / 3;
         String encoded;
         encoded = new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
 
-        encoded = checkCharSet(schar.charSet, encoded);
+        encoded = mapCharsetChars(schar.charSet, encoded);
 
         // Render Character;
         // Blink ? => currently done in animation thread
-        boolean blink = ((style & StyleChar.STYLE_BLINK) > 0);
+        boolean blink = ((style & StyleChar.STYLE_SLOW_BLINK) > 0);
+        boolean faint = ((style & StyleChar.STYLE_FAINT) > 0);
         boolean bold = ((style & StyleChar.STYLE_BOLD) > 0);
         boolean italic = ((style & StyleChar.STYLE_ITALIC) > 0);
         boolean uberbold = ((style & StyleChar.STYLE_UBERBOLD) > 0);
@@ -381,52 +421,55 @@ public class CharRenderer {
         if (uberbold) {
             Color shadedFG = ColorMap.blendColor(bg, fg, 0.5, true);
             imageGraphics.setColor(shadedFG);
-            imageGraphics.drawString(encoded, imgx - 1, imgy);
-            imageGraphics.drawString(encoded, imgx + 1, imgy);
-            imageGraphics.drawString(encoded, imgx, imgy - 1);
-            imageGraphics.drawString(encoded, imgx, imgy + 1);
+            imageGraphics.drawString(encoded, imgx - 1, basey);
+            imageGraphics.drawString(encoded, imgx + 1, basey);
+            imageGraphics.drawString(encoded, imgx, basey -1);
+            imageGraphics.drawString(encoded, imgx, basey +1);
             imageGraphics.setColor(fg);
-            imageGraphics.drawString(encoded, imgx, imgy);
+            imageGraphics.drawString(encoded, imgx, basey);
         } else {
-            imageGraphics.drawString(encoded, imgx, imgy);
+            imageGraphics.drawString(encoded, imgx, basey);
         }
 
         // add line:
         if ((style & StyleChar.STYLE_UNDERSCORE) > 0) {
-            imageGraphics.drawLine(imgx, imgy, imgx + getCharWidth(), imgy);
+            imageGraphics.drawLine(imgx, basey + 1, imgx + getCharWidth(), basey + 1);
+        }
+        if ((style & StyleChar.STYLE_STRIKETHROUGH) > 0) {
+            imageGraphics.drawLine(imgx, midy, imgx + getCharWidth(), midy);
         }
     }
 
-    private String checkCharSet(String charset, String str) {
-        if (isGraphicsCharSet(charset)) {
-            String graph = "";
-            for (int i = 0; i < str.length(); i++) {
-                graph += this.CharSet1(str.charAt(i));
-            }
-            return graph;
+    private String mapCharsetChars(String charset, String org) {
+        if (!isGraphicsCharSet(charset)) {
+            return org;
         }
 
-        return str;
+        char[] chars = new char[org.length()];
+        for (int i = 0; i < org.length(); i++) {
+            chars[i] = this.mapGraphicsChar(org.charAt(i));
+        }
+
+        return new String(chars);
     }
 
     private static boolean isGraphicsCharSet(String charset) {
         if (charset == null)
             return false;
 
-        return charset.compareTo(CharPane.CharSets.CHARSET_GRAPHICS) == 0;
-
+        return charset.compareTo(TermConst.CharSet.CHARSET_GRAPHICS.toString()) == 0;
     }
 
     public void initFonts() {
         initFont(this.fontInfo);
     }
 
-
-    private char CharSet1(char c) {
+    private char mapGraphicsChar(char c) {
         // linear lookup, could use mapping tables:
         for (int i = 0; i < graphOrg0.length(); i++) {
-            if (graphOrg0.charAt(i) == c)
+            if (graphOrg0.charAt(i) == c) {
                 return graphSet1.charAt(i);
+            }
         }
         return c;
     }
@@ -450,21 +493,18 @@ public class CharRenderer {
         }
     }
 
-
-
     public FontInfo getFontInfo() {
         return fontInfo;
     }
 
-
     public void renderCursor(Graphics graphics, int xpos, int ypos, Color cursorBlinkColor) {
-        Color fg = colorMap().getForeground();
+        Color fg = getEffectiveForeground();
         if (cursorBlinkColor != null) {
             fg = cursorBlinkColor;
         }
 
         graphics.setXORMode(fg);
-        graphics.setColor(colorMap().getBackground());
+        graphics.setColor(getEffectiveBackground());
         graphics.fillRect(xpos, ypos, getCharWidth() - 1, getLineHeight() - 1);
         graphics.setPaintMode();
     }
@@ -482,7 +522,7 @@ public class CharRenderer {
      * Full Line Height =  Character Height + Line Spacing + Font Descent.
      */
     public int getLineHeight() {
-        return this.fontCharHeight + this.lineSpacing + this.fontDescent;
+        return this.fontCharHeight + this.lineLeading;
     }
 
     public int getFontCharWidth() {

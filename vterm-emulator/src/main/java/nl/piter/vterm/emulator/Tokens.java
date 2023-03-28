@@ -12,64 +12,71 @@ public class Tokens {
     public enum TokenOption {
         // NON_PRINTABLE, //
         // NON_DIGIT, //
-        OPTION_INTEGERS, //
-        OPTION_GRAPHMODE //
+        PARAMETER_CHARSET,
+        PARAMETER_INTEGERS, //
+        PARAMETER_STRING,
+        PARAMETER_GRAPHMODE //
     }
 
     // @formatter:off
     public enum Token {
-        // ===
         // Single CTRL to tokens
-        // ===
         EOF, // -1
         NUL,
+        SOH,
+        STX,
         ETX,
         EOT,
-        EOD,
         ENQ,
-        BEEP,
+        ACK,
+        BEL,
+        //
         BS,
         HT,
         LF,
         VT,
         FF,
         CR,
+        //
+        XON,
+        XOFF,
         DC1,
         DC2,
         CAN,
         SUB,
         ESC,
         DEL,
-        CHARSET_G0,
-        CHARSET_G1,
-        //===
-        //Double Char Escape: ESC+CHAR:
-        //===
+        // Double Char Escape: ESC+CHAR:
         SAVE_CURSOR,
         RESTORE_CURSOR,
         APPLICATION_KEYPAD,
         NUMERIC_KEYPAD,
-        INDEX,
-        NEXT_LINE,
-        TAB_SET,
-        TABCLEAR,
-        REVERSE_INDEX,
-        SEND_TERM_ID,
-        // Xterm graph mode
+        IND_INDEX,
+        NEL_NEXT_LINE,
+        HTS_TAB_SET,
+        HTC_TAB_CLEAR,
+        RI_REVERSE_INDEX,
+        // Device, Xterm, App
+        DCS_DEVICE_CONTROL_STRING,
+        SOS_START_OF_STRING,
+        ST_END_OF_STRING,
+        SPA_START_OF_GUARDED_AREA,
+        EPA_END_OF_GUARDER_AREA,
+        DECID_SEND_TERM_ID,
+        PM_PRIVACY_MESSAGE,
         OSC_GRAPHMODE,
-        // SEND/RESPONSE
-        SEND_PRIMARY_DA,
+        REQ_PRIMARY_DA,
         RESPONSE_PRIMARY_DA,
-        SEND_SECONDARY_DA,
+        REQ_SECONDARY_DA,
         RESPONSE_SECONDARY_DA,
-        // ===
-        // Escape Sequences \E[ & \E[?
-        // ===
-        // screen manupilation:
+        REQ_TERTIARY_DA,
+        REQ_XTVERSION,
+        DEVICE_STATUS,
+        // Font, Lines
+        SET_FONT_STYLE,
+        // Screen, Cursor, Lines
         SET_REGION,
         SET_CURSOR,
-        // SET_CURSORX,
-        SET_FONT_STYLE,
         SET_MODE,
         RESET_MODE,
         LINE_ERASE,
@@ -86,52 +93,40 @@ public class Tokens {
         BACKWARD_TABS,
         SCROLL_DOWN_OR_MOUSETRACK,
         DELETE_LINES,
-        // Character sequence
-        CHAR, // sequence of one or more UTF-8 (ansi==false) characters !
-        // movement tokens (Send only) (more are added as plain text, not as tokens)
+        // Actual Character
+        CHAR,
+        // movement tokens
         UP,
         DOWN,
         LEFT,
-        RIGHT, //ENTER, TAB, BACKSPACE,
-        DEVICE_STATUS,
+        RIGHT,
+        // CharSets
+        CHARSET_G0,
+        CHARSET_G1,
+        CHARSET_G0_DES,
+        CHARSET_G1_DES,
+        CHARSET_G2_DES,
+        CHARSET_G3_DES,
         // ====================
         // Dec Privates ?
         // ======================
         DEC_SETMODE,
         DEC_RESETMODE,
-        CHARSET_G0_UK,
-        CHARSET_G0_US,
-        CHARSET_G0_DUTCH,
-        CHARSET_G0_FRENCH,
-        CHARSET_G0_FINNISH,
-        CHARSET_G0_SWEDISH,
-        CHARSET_G0_GERMAN,
-        CHARSET_G0_SPANISH,
-        CHARSET_G0_OTHER, // Catch all see token argument for language ID.
-        CHARSET_G0_GRAPHICS,
-        CHARSET_G0_ALT_ROM_NORMAL,
-        CHARSET_G0_ALT_ROM_SPECIAL,
-        CHARSET_G1_UK,
-        CHARSET_G1_US,
-        CHARSET_G1_DUTCH,
-        CHARSET_G1_FRENCH,
-        CHARSET_G1_GERMAN,
-        CHARSET_G1_SPANISH,
-        CHARSET_G1_OTHER, // Catch all see token argument for language ID.
-        CHARSET_G1_GRAPHICS,
-        CHARSET_G1_ALT_ROM_NORMAL,
-        CHARSET_G1_ALT_ROM_SPECIAL,
         DEC_SCREEN_ALIGNMENT,
+        // ---
         // prefix indicators, are NON-Terminating tokens (under construction)
-        CSI_PREFIX_START(false),
+        // ---
+        CSI_PREFIX(false),
+        OSC_GRAPHMODE_PREFIX(false),
         // todo:
         WINDOW_MANIPULATION,
         CHARACTER_ATTRS,
-        XTERM_RES_RESET_MODIFIERS,
+        XTERM_RESET_MODIFIERS,
+        XTERM_SETGET_GRAPHICS,
         XTERM_WIN_MANIPULATION,
-        STRING_START,
         STRING_END,
-        // Misc.
+        PRIVACY_MESSAGE,
+        APP_PROGRAM_CMD,
         DEC_LED_SET,
         DEC_LED_TEST,
         EXIT_VT52_MODE,
@@ -153,6 +148,7 @@ public class Tokens {
         public boolean isTerminator() {
             return terminator;
         }
+
     }
 
 }

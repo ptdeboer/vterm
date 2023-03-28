@@ -17,16 +17,13 @@ import nl.piter.vterm.emulator.Tokens;
 @ToString
 public class TokenDef implements IToken {
 
-    /**
-     * Factory method.
-     */
     public static IToken createFrom(char[] chars,
                                     Tokens.TokenOption option,
-                                    Character terminatorCharm,
+                                    char[] terminatorChars,
                                     Tokens.Token token,
                                     String tokenDescription) {
         // factory
-        return new TokenDef(chars, option, terminatorCharm, token, tokenDescription);
+        return new TokenDef(chars, option, terminatorChars, token, tokenDescription);
     }
 
     // --- //
@@ -35,21 +32,21 @@ public class TokenDef implements IToken {
     protected final Tokens.Token token;
     protected final Tokens.TokenOption option;
     protected final String tokenDescription;
-    protected final Character terminatorChar;
+    protected final char[] terminatorChars;
     // cached:
     private final char[] fullSequence;
 
-    public TokenDef(char[] chars, Tokens.TokenOption tokenOption, Character terminatorChar, Tokens.Token token, String tokenDescription) {
+    public TokenDef(char[] chars, Tokens.TokenOption tokenOption, char[] terminatorChars, Tokens.Token token, String tokenDescription) {
         this.chars = chars;
         this.token = token;
         this.option = tokenOption;
         this.tokenDescription = tokenDescription;
-        this.terminatorChar = terminatorChar;
+        this.terminatorChars = terminatorChars;
         //
-        if (terminatorChar == null) {
+        if (terminatorChars == null) {
             this.fullSequence = chars;
         } else {
-            this.fullSequence = (new String(chars) + terminatorChar).toCharArray();
+            this.fullSequence = (new String(chars) + new String(terminatorChars)).toCharArray();
         }
     }
 
@@ -74,8 +71,8 @@ public class TokenDef implements IToken {
     }
 
     @Override
-    public Character terminator() {
-        return terminatorChar;
+    public char[] terminator() {
+        return terminatorChars;
     }
 
     @Override

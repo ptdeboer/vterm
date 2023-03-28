@@ -21,7 +21,7 @@ public class VTerm {
 
     private VTermChannelProvider channelProvider;
 
-    private VTermJFrame vtermJFrame;
+    private VTermFrame vtermJFrame;
 
     public VTerm() {
     }
@@ -55,7 +55,7 @@ public class VTerm {
             this.channelProvider = new VTermChannelProvider();
         }
 
-        this.vtermJFrame = new VTermJFrame(channelProvider);
+        this.vtermJFrame = new VTermFrame(channelProvider);
 
         // Always create windows during Swing Event thread
         Runnable creator = () -> {
@@ -67,8 +67,7 @@ public class VTerm {
 
             vtermJFrame.updateFrameSize();
             if (shellChan != null) {
-                vtermJFrame.setShellChannel(shellChan);
-                vtermJFrame.startSession();
+                vtermJFrame.startShellChannel(shellChan, true);
             }
 
             if (optionalLocation != null) {

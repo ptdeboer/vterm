@@ -7,10 +7,13 @@
 //---
 package nl.piter.vterm.emulator;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.EOFException;
 
 public class Util {
+
+    public static char[] HEXVALUES = new char[]{
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+    };
 
     /**
      * Mini byte buffer can be used as byte stack.
@@ -18,29 +21,24 @@ public class Util {
     public static class MiniBuffer {
         // Use direct memory buffers?: ByteBuffer bytes = ByteBuffer.allocateDirect(200);
 
-        private final byte[] bytes;
+        private final int[] values;
         private int index = 0;
 
         public MiniBuffer(int size) {
-            bytes = new byte[size];
+            values = new int[size];
         }
 
-        public void put(byte b) {
-            bytes[index] = b;
+        public void put(int b) {
+            values[index] = b;
             index++;
         }
 
-        public byte pop() throws IOException {
+        public int pop() throws EOFException {
             if (index <= 0) {
-                throw new IOException("Byte Byffer is empty: can not pop");
+                throw new EOFException("Byte Byffer is empty: can not pop");
             }
-
             index--;
-            return bytes[index];
-        }
-
-        public String toString(String encoding) throws UnsupportedEncodingException {
-            return new String(bytes, 0, index, encoding);
+            return values[index];
         }
 
         // set index to 0;
@@ -52,9 +50,10 @@ public class Util {
          * Returns duplicate of byte buffer
          */
         public byte[] getBytes() {
-            byte[] b2 = new byte[index];
-            System.arraycopy(bytes, 0, b2, 0, index);
-            return b2;
+            byte[] bts = new byte[index];
+            for (int i = 0; i < index; i++)
+                bts[i] = (byte) values[i];
+            return bts;
         }
 
         public int size() {
@@ -62,18 +61,11 @@ public class Util {
         }
 
         public int freeSpace() {
-            return bytes.length - index;
+            return values.length - index;
         }
 
-        /**
-         * Auto casts integer to byte value. Uses lower 0x00ff value
-         */
-        public void put(int c) {
-            put((byte) (c & 0x00ff));
-        }
-
-        public byte[] bytes() {
-            return bytes;
+        public int[] values() {
+            return values;
         }
 
         public int index() {
@@ -81,15 +73,60 @@ public class Util {
         }
 
         public void setBytes(byte[] newBytes, int num) {
-            if (num >= 0) System.arraycopy(newBytes, 0, this.bytes, 0, num);
+            for (int i = 0; i < newBytes.length; i++) {
+                this.values[i] = newBytes[i];
+            }
             this.index = num;
         }
     }
 
+    public static boolean isEmpty(String str) {
+        return ((str == null) || (str.equals("")));
+    }
+
+    public static String toStringOrNull(Object objectOrNull) {
+        return (objectOrNull != null) ? objectOrNull.toString() : null;
+    }
+
+    public static String toStringOrEmpty(Object objectOrNull) {
+        return (objectOrNull != null) ? objectOrNull.toString() : "";
+    }
+
+    /**
+     * Parse hexadecimal byte string WITHOUT '0x' prefix.
+     *
+     * @param hexString for example "DEADBEAF" as String.
+     * @return byte array, for example: byte[]{0xDE,0xAD,0xBE,0xAF}
+     */
+    public static byte[] hex2bytes(String hexString) {
+        if (hexString == null)
+            return null;
+
+        int n = hexString.length() / 2;
+        byte[] bytes = new byte[n];
+
+        for (int i = 0; i < n; i++) {
+            int b = Integer.parseInt(hexString.substring(i * 2, i * 2 + 2), 16);
+            bytes[i] = (byte) b;
+        }
+
+        return bytes;
+    }
+
+    public static String bytes2hexstr(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(byte2hexstr(b));
+        }
+        return sb.toString();
+    }
+
+    // Autopromotion: captures byte argument as well:
     public static String byte2hexstr(int val) {
+        val = (val & 0x00ff); // byte wraparound:
         char[] cs = new char[2];
-        cs[0] = (char) (0x30 + val % 16);
-        cs[1] = (char) (0x30 + (val / 16) % 16);
+        cs[0] = HEXVALUES[((val / 16) % 16)];
+        cs[1] = HEXVALUES[(val % 16)];
         return new String(cs);
     }
 
@@ -133,5 +170,17 @@ public class Util {
         }
 
         return Util.byte2hexstr(c);
+    }
+
+    public static String null2empty(String str) {
+        return (str != null) ? str : "";
+    }
+
+    public static int min(int v1, int v2) {
+        return (v1 < v2) ? v1 : v2;
+    }
+
+    public static int max(int v1, int v2) {
+        return (v1 > v2) ? v1 : v2;
     }
 }

@@ -5,7 +5,7 @@
  *     See LICENSE.txt for details.
  */
 //---
-package nl.piter.vterm.ui.panel;
+package nl.piter.vterm.ui.panels;
 
 import javax.swing.*;
 import java.awt.*;

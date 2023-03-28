@@ -8,7 +8,7 @@
 package nl.piter.vterm.ui;
 
 /**
- * These are VTerm Gui constants, not properties from the Terminal Emulator.
+ * These are VTerm UI constants, not properties for the Terminal Emulator.
  */
 public class VTermConst {
 
@@ -17,6 +17,8 @@ public class VTermConst {
     public static final String VTERM_FONT_TYPE = "vterm.font.type";
     public static final String VTERM_FONT_SIZE = "vterm.font.size";
     public static final String VTERM_FONT_ANTI_ALIASING = "vterm.font.antiAliasing";
-    public static final String VTERM_SYNC_SCROLLING = "vterm.syncScrolling";
-
+    public static final String VTERM_SYNC_SLOW_SCROLLING = "vterm.ui.slowScrolling";
+    public static final String VTERM_SESSION_DEFAULT_ROWS = "vterm.session.default.numRows";
+    public static final String VTERM_SESSION_DEFAULT_COLUMNS = "vterm.session.default.numColumns";
+    public static final String VTERM_SESSION_LAST_URI_SSH = "vterm.session.last.sshUri";
 }

@@ -10,6 +10,7 @@ package nl.piter.vterm.emulator;
 import nl.piter.vterm.api.EmulatorListener;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * VT10X/XTerm (VTx) emulator. Reads from Tokenizer and outputs to CharacterTerminal.
@@ -18,15 +19,15 @@ public interface Emulator {
 
     void start();
 
+    String getType();
+
     byte[] getKeyCode(String keystr);
 
-    String getEncoding();
+    Charset getEncoding();
 
     void signalTerminate();
 
     void signalHalt(boolean b);
-
-    boolean updateRegion(int nr_columns, int nr_rows, int region_y1, int region_y2);
 
     void step();
 
@@ -43,5 +44,9 @@ public interface Emulator {
     void addListener(EmulatorListener listener);
 
     void removeListener(EmulatorListener listener);
+
+    void setSlowScrolling(boolean val);
+
+    boolean getSlowScrolling();
 
 }

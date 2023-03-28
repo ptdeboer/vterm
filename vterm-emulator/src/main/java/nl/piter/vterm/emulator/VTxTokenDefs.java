@@ -7,6 +7,7 @@
 //---
 package nl.piter.vterm.emulator;
 
+import lombok.extern.slf4j.Slf4j;
 import nl.piter.vterm.emulator.tokens.IToken;
 import nl.piter.vterm.emulator.tokens.TokenDef;
 import nl.piter.vterm.exceptions.VTxInvalidConfigurationException;
@@ -18,73 +19,11 @@ import java.util.List;
 import static nl.piter.vterm.emulator.Tokens.Token;
 import static nl.piter.vterm.emulator.Tokens.Token.*;
 import static nl.piter.vterm.emulator.Tokens.TokenOption;
-import static nl.piter.vterm.emulator.Tokens.TokenOption.OPTION_GRAPHMODE;
-import static nl.piter.vterm.emulator.Tokens.TokenOption.OPTION_INTEGERS;
+import static nl.piter.vterm.emulator.Tokens.TokenOption.*;
+import static nl.piter.vterm.emulator.VTxCharDefs.*;
 
+@Slf4j
 public class VTxTokenDefs {
-
-    /*
-     * VT102 Control characters (octal)
-     * 000 = Null (fill character)
-     * 003 = ETX (Can be selected half-duplex turnaround char)
-     * 004 = EOT (Can be turnaround or disconnect char, if turn, then DLE-EOT=disc.)
-     * 005 = ENQ (Transmits answerback message)
-     * 007 = BEL (Generates bell tone)
-     * 010 = BS  (Moves cursor left)
-     * 011 = HT  (Moves cursor to next tab)
-     * 012 = LF  (Linefeed or New line operation)
-     * 013 = VT  (Processed as LF)
-     * 014 = FF  (Processed as LF, can be selected turnaround char)
-     * 015 = CR  (Moves cursor to left margin, can be turnaround char)
-     * 016 = SO  (Selects G1 charset)
-     * 017 = SI  (Selects G0 charset)
-     * 021 = DC1 (XON, causes terminal to continue transmit)
-     * 023 = DC3 (XOFF, causes terminal to stop transmitting)
-     * 030 = CAN (Cancels escape sequence)
-     * 032 = SUB (Processed as CAN)
-     * 033 = ESC (Processed as sequence indicator)
-     */
-
-    final public static char CTRL_NUL = 0x00; // Ignored on input; not stored in buffer
-    final public static char CTRL_ETX = 0x03; // CTRL-C:
-    final public static char CTRL_EOT = 0x04; // CTRL-D: End Of Transission ?
-    final public static char CTRL_ENQ = 0x05; // CTRL_E Transmit ANSWERBACK message
-    final public static char CTRL_BEL = 0x07; // CTRL-G: BEEEEEEEEEEEEEEEEP
-    final public static char CTRL_BS = 0x08; // CTRL-H: Backspace
-    final public static char CTRL_HT = 0x09; // CTRL-I: next stabstop
-    final public static char CTRL_LF = 0x0a; // CTRL-J: line feed/new line (depends on line feed mode)
-    final public static char CTRL_VT = 0x0b; // CTRL-K/LF : line feed/new line
-    final public static char CTRL_FF = 0x0c; // CTRL-L/LF : line feed/new line
-    final public static char CTRL_CR = 0x0d; // CTRL-M/CR : Carriage Return
-    final public static char CTRL_SO = 0x0e; // CTRL-N: G1 character set
-    final public static char CTRL_SI = 0x0f; // CTRL-O: G0 character set
-    final public static char CTRL_XON = 0x11; // CTRL-Q: XON (only XON/XOFF are allowed)
-    final public static char CTRL_XOFF = 0x13;// CTRL-S: XOFF (turn off XON/XOFF mode)
-    final public static char CTRL_CAN = 0x18; // Abort CTRL sequence, output ERROR Char
-    final public static char CTRL_SUB = 0x1a; // Same as CAN
-    final public static char CTRL_ESC = 0x1b; // New Escape Sequence  (aborts previous)
-    final public static char CTRL_DEL = 0x7f; // Ignored
-    // 8 bit characters:                     // <name> (7 bit equivalent-> doesn't match)
-    final public static char IND = 0x84; // Index (ESC D)
-    final public static char NEL = 0x85; // Next Line  = ESC E
-    final public static char HTS = 0x88; // Tab Set ESC H
-    final public static char RI = 0x8d; //
-    final public static char SS2 = 0x8e; //
-    final public static char SS3 = 0x8f; //
-    final public static char DCS = 0x90; //
-    final public static char SPA = 0x96; //
-    final public static char EPA = 0x97; //
-    final public static char SOS = 0x98; //
-    final public static char DECID = 0x9a; //
-    final public static char CSI = 0x9b; //
-    final public static char ST = 0x9c; //
-    final public static char OSC = 0x9d; //
-    final public static char PM = 0x9e; //
-    final public static char APC = 0x9f; //
-    // Prefix characters sequences:
-    final public static String CTRL_CSI_PREFIX = CTRL_ESC + "[";
-    final public static String CTRL_DEC_PRIVATE_PREFIX = CTRL_ESC + "[?";
-    final public static String CTRL_SECONDARY_DA_PREFIX = CTRL_ESC + "[>";
 
     /**
      * Simple token table. Store TOKEN as string together with char sequence (as string).
@@ -94,88 +33,67 @@ public class VTxTokenDefs {
      * <pre>
      *  { TERMINATOR_CHAR, CHAR_TOKEN}
      *  { UTF8_STRING, TERMINATOR_TOKEN}
-     *  { UTF8_STRING, <OPTION>, SEQUENCE_TOKEN }  -> OSC graphmode only
+     *  { UTF8_STRING, <OPTION>, SEQUENCE_TOKEN } -> CharSet only
      *  { UTF8_STRING, <OPTION>, TERMINATOR_CHAR, SEQUENCE_TOKEN [, COMMENT ]  }
      *  { UTF8_STRING, <OPTION>, TERMINATOR_UTF8_STRING, SEQUENCE_TOKEN [, COMMENT ] }
      * </pre>
      */
     private static final Object[][] tokenDefs = {
-            // === Single Char Tokens === //
+            // Single char tokens.
             {CTRL_NUL, NUL}, // => Warning: 0x00 => Empty String
-            {CTRL_ETX, ETX},
+            {CTRL_ETX, SOH},
+            {CTRL_STX, STX},
             {CTRL_EOT, EOT},
             {CTRL_ENQ, ENQ},
+            {CTRL_ACK, ACK},
+            {CTRL_BEL, BEL},
+            //
             {CTRL_BS, BS},
             {CTRL_HT, HT},
-            {CTRL_CR, CR},
             {CTRL_LF, LF},
             {CTRL_VT, VT},
             {CTRL_FF, FF},
-            {CTRL_CAN, CAN},
-            {CTRL_SUB, SUB},
-            {CTRL_ESC, ESC}, // Careful ESC is NOT Terminating TOKEN !
-            {CTRL_BEL, BEEP}, // Beep
-            {CTRL_XON, UNSUPPORTED, "XON (Not Implementend)"},
-            {CTRL_XOFF, UNSUPPORTED, "XOFF (Not Implemented)"},
-            // charsets:
+            {CTRL_CR, CR},
             {CTRL_SI, CHARSET_G0},
             {CTRL_SO, CHARSET_G1},
-            // === Double Char Escape codes === //
+            //
+            {CTRL_CAN, CAN},
+            {CTRL_SUB, SUB},
+            {CTRL_ESC, ESC}, // Careful ESC is NOT a terminating TOKEN !
+            {CTRL_XON, XON},
+            {CTRL_XOFF, XOFF},
+            {CTRL_DEL, DEL},
+            // Double Char Escape codes:
             {CTRL_ESC + "7", SAVE_CURSOR},
             {CTRL_ESC + "8", RESTORE_CURSOR},
+            {CTRL_ESC + "D", IND_INDEX},
+            {CTRL_ESC + "E", NEL_NEXT_LINE},
+            {CTRL_ESC + "H", HTS_TAB_SET},
+            {CTRL_ESC + "M", RI_REVERSE_INDEX}, // DELETE_LINE
+            {CTRL_ESC + "N", UNSUPPORTED, "Single Shift Select G2 CharSet"},
+            {CTRL_ESC + "O", UNSUPPORTED, "Single Shift Select G3 CharSet"},
+            {CTRL_ESC + "V", SPA_START_OF_GUARDED_AREA},
+            {CTRL_ESC + "W", EPA_END_OF_GUARDER_AREA},
+            {CTRL_ESC + "X", SOS_START_OF_STRING},
+            {CTRL_ESC + "Z", DECID_SEND_TERM_ID},
+            {CTRL_ESC + "\\", ST_END_OF_STRING},
+            {CTRL_ESC + "^", PM_PRIVACY_MESSAGE},
             {CTRL_ESC + "=", APPLICATION_KEYPAD}, // opposite NUMERIC
             {CTRL_ESC + ">", NUMERIC_KEYPAD}, // opposite of APPLICATION
             {CTRL_ESC + "<", EXIT_VT52_MODE},
-            {CTRL_ESC + "D", INDEX},
-            {CTRL_ESC + "E", NEXT_LINE},
-            {CTRL_ESC + "H", TAB_SET},
-            {CTRL_ESC + "M", REVERSE_INDEX}, // DELETE_LINE
-            {CTRL_ESC + "N", UNSUPPORTED},
-            {CTRL_ESC + "O", UNSUPPORTED},
-            {CTRL_ESC + "P", UNSUPPORTED},
-            {CTRL_ESC + "V", UNSUPPORTED},
-            {CTRL_ESC + "W", UNSUPPORTED},
-            {CTRL_ESC + "X", STRING_START},
-            {CTRL_ESC + "Z", SEND_TERM_ID},
-            {CTRL_ESC + "\\", STRING_END},
-            // Select G0 character set: (there are more)
-            {CTRL_ESC + "(0", CHARSET_G0_GRAPHICS},
-            {CTRL_ESC + "(A", CHARSET_G0_UK},
-            {CTRL_ESC + "(B", CHARSET_G0_US},
-            {CTRL_ESC + "(4", CHARSET_G0_DUTCH},
-            {CTRL_ESC + "(C", CHARSET_G0_FINNISH},
-            {CTRL_ESC + "(5", CHARSET_G0_FINNISH},
-            {CTRL_ESC + "(R", CHARSET_G0_FRENCH},
-            {CTRL_ESC + "(f", CHARSET_G0_FRENCH},
-            {CTRL_ESC + "(K", CHARSET_G0_GERMAN},
-            {CTRL_ESC + "(Z", CHARSET_G0_SPANISH},
-            {CTRL_ESC + "(H", CHARSET_G0_SWEDISH},
-            {CTRL_ESC + "(7", CHARSET_G0_SWEDISH},
-            {CTRL_ESC + "(1", CHARSET_G0_ALT_ROM_NORMAL},
-            {CTRL_ESC + "(2", CHARSET_G0_ALT_ROM_SPECIAL},
-            // Select G1 character set: (there are more)
-            // ESC + '*' and ESC + '+' are Charset G2, and G3.
-            {CTRL_ESC + ")A", CHARSET_G1_UK},
-            {CTRL_ESC + ")B", CHARSET_G1_US},
-            {CTRL_ESC + ")4", CHARSET_G1_DUTCH},
-            {CTRL_ESC + ")R", CHARSET_G1_FRENCH},
-            {CTRL_ESC + ")f", CHARSET_G1_FRENCH},
-            {CTRL_ESC + ")K", CHARSET_G1_GERMAN},
-            {CTRL_ESC + ")Z", CHARSET_G1_SPANISH},
-            {CTRL_ESC + ")C", CHARSET_G1_OTHER},
-            {CTRL_ESC + ")5", CHARSET_G1_OTHER},
-            {CTRL_ESC + ")0", CHARSET_G1_GRAPHICS},
-            {CTRL_ESC + ")1", CHARSET_G1_ALT_ROM_NORMAL},
-            {CTRL_ESC + ")2", CHARSET_G1_ALT_ROM_SPECIAL},
-            //
+            // Select G0-G3 character set:
+            {CTRL_ESC + "(", PARAMETER_CHARSET, CHARSET_G0_DES},
+            {CTRL_ESC + ")", PARAMETER_CHARSET, CHARSET_G1_DES},
+            {CTRL_ESC + "*", PARAMETER_CHARSET, CHARSET_G2_DES},
+            {CTRL_ESC + "+", PARAMETER_CHARSET, CHARSET_G3_DES},
+            // Triple Char Escape Codes
+            // Not implemented but add filter and detect them anyway
             {CTRL_ESC + "%@", UNSUPPORTED, "Select Default Charset ISO 8859-1"},
             {CTRL_ESC + "%G", UNSUPPORTED, "Select UTF8 Charset"},
-            // Not implemented but add filter and detect them anyway
             {CTRL_ESC + "#3", UNSUPPORTED, "DEC Double height, top half"},
             {CTRL_ESC + "#4", UNSUPPORTED, "DEC Double height, bottom half"},
             {CTRL_ESC + "#5", UNSUPPORTED, "DEC Single width line"},
             {CTRL_ESC + "#6", UNSUPPORTED, "DEC double width line"},
-            //
             {CTRL_ESC + " F", UNSUPPORTED, "7 Bits Controls"},
             {CTRL_ESC + " G", UNSUPPORTED, "8 Bits Controls"},
             {CTRL_ESC + " L", UNSUPPORTED, "Set ANSI conformance level 1 - vt100"},
@@ -187,65 +105,88 @@ public class VTxTokenDefs {
             {CTRL_ESC + "#5", UNSUPPORTED, "DEC single width line"},
             {CTRL_ESC + "#6", UNSUPPORTED, "DEC double width line"},
             {CTRL_ESC + "#8", DEC_SCREEN_ALIGNMENT}, // "DEC Screen aligment Test"},
-            // --------------------------------------------------------------------------------
-            // CSI Escape Sequences "^[[" Or: <ESC> '[' OR <ESC> + ']' for XGraphMode.
+            // ----------------------------------------------------------------
+            // CSI Escape Sequence: "^[[" (<ESC>-[)
+            // OSC GraphMode Sequence: "^[]" (<ESC>-])
             // Optimization: Prefix must be first Escape + '[' token in token list so that the prefix
-            // token is matched first or else all tokens with options trigger read aheads.
+            // token is matched first.
             // The PREFIX token triggers the parseOptions() in nextToken() if 2d value is an OPTION.
-            // --------------------------------------------------------------------------------
-            // XGRAPHMODE: No terminator only 'Prefix':
-            {CTRL_ESC + "]", OPTION_GRAPHMODE, OSC_GRAPHMODE},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, -1, CSI_PREFIX_START, "Start of CSI Prefix"},
+            // ----------------------------------------------------------------
+            // Device and App sequences:
+            {CTRL_ESC + "P", PARAMETER_STRING, CTRL_ESC + "\\", DCS_DEVICE_CONTROL_STRING},
+            {CTRL_ESC + "_", PARAMETER_STRING, CTRL_ESC + "\\", APP_PROGRAM_CMD},
+            // OSC GRAPHMODE (xterm): <ESC>-]
+            {CTRL_OSC_PREFIX, PARAMETER_GRAPHMODE, (char) -1, OSC_GRAPHMODE_PREFIX},
+            {CTRL_OSC_PREFIX, PARAMETER_GRAPHMODE, CTRL_BEL, OSC_GRAPHMODE},
+            {CTRL_OSC_PREFIX, PARAMETER_GRAPHMODE, CTRL_ESC + "\\", OSC_GRAPHMODE},
+            // ----------------------------------------------------------------
+            // CSI Sequences: <ESC>-[
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, (char) -1, CSI_PREFIX, "Start of CSI Prefix"},
             // DEC_PRIVATE terminators: 3 char prefix, must be after 2 char CSI prefix!
-            {CTRL_CSI_PREFIX + "?", OPTION_INTEGERS, 'h', DEC_SETMODE},
-            {CTRL_CSI_PREFIX + "?", OPTION_INTEGERS, 'l', DEC_RESETMODE},
-            {CTRL_CSI_PREFIX + "?", OPTION_INTEGERS, 'm', CHARACTER_ATTRS},
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'h', DEC_SETMODE},
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'l', DEC_RESETMODE},
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'm', CHARACTER_ATTRS},
             // no 3rd char here:
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'c', SEND_PRIMARY_DA},
-            {CTRL_CSI_PREFIX + "?", OPTION_INTEGERS, 'c', RESPONSE_PRIMARY_DA},
-            {CTRL_CSI_PREFIX + ">", OPTION_INTEGERS, 'c', SEND_SECONDARY_DA},
-            {CTRL_CSI_PREFIX + ">", OPTION_INTEGERS, 'c', RESPONSE_SECONDARY_DA}, // Duplicate!
-            // XTERM ?
-            {CTRL_CSI_PREFIX + ">", OPTION_INTEGERS, 'm', XTERM_RES_RESET_MODIFIERS},
-            // --------------------------------------------------------------------------------
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, "%m", UNSUPPORTED, "VI '0%m' GREMLIN"},
-            // --------------------------------------------------------------------------------
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'c', REQ_PRIMARY_DA},
+            // Devices
+            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'c', REQ_SECONDARY_DA},
+            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'q', REQ_XTVERSION},
+            {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 'c', REQ_TERTIARY_DA},
+            // XTERM
+            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'm', XTERM_RESET_MODIFIERS},
+            // ----------------------------------------------------------------
+            // beta
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'S', XTERM_SETGET_GRAPHICS, "XTSMGRAPHICS"},
+            // Huh
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, "$p", UNSUPPORTED, "Request DEC private mode (DECRQM)"},
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'u', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'r', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 's', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 'u', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 'r', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 's', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'S', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'u', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'r', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 's', UNSUPPORTED},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, "%m", UNSUPPORTED, "VI '0%m' GREMLIN"},
+            // ----------------------------------------------------------------
             // CSI TERMINATORS
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, '@', INSERT_BLANK_CHARS}, // \E[K
-            // Cursors:
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'A', UP}, // vt100/xterm cursor control
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'B', DOWN}, //vt100/xterm cursor control
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'C', RIGHT}, //vt100/xterm cursor control
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'D', LEFT}, //vt100/xterm cursor control
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'E', NEXT_LINE},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'F', PRECEDING_LINE},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'G', SET_COLUMN},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'H', SET_CURSOR}, // \[[<rows>;<columns>H
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'I', FORWARD_TABS}, // \[[<y>;<x>H
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'J', SCREEN_ERASE}, // \[[...,J
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'K', LINE_ERASE}, // \[[...,K
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'L', INSERT_LINES}, // \[[...,L
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'M', DELETE_LINES}, // \[[...,M
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'P', DEL_CHAR},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'S', SCROLL_UP},
+            // Cursors: VT100 and/or XTerm:
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, '@', INSERT_BLANK_CHARS},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'A', UP},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'B', DOWN},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'C', RIGHT},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'D', LEFT},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'E', NEL_NEXT_LINE},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'F', PRECEDING_LINE},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'G', SET_COLUMN},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'H', SET_CURSOR},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'I', FORWARD_TABS},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'J', SCREEN_ERASE},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'K', LINE_ERASE},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'L', INSERT_LINES},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'M', DELETE_LINES},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'P', DEL_CHAR},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'S', SCROLL_UP},
             // one integer=scroll down, 5 integers=mouse track
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'T', SCROLL_DOWN_OR_MOUSETRACK},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'X', ERASE_CHARS},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'Z', BACKWARD_TABS},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'd', SET_ROW},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'f', SET_CURSOR}, // double -> see \E[H
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'g', TABCLEAR},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'h', SET_MODE}, // \E[<c>;..;<c>h
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'l', RESET_MODE}, // \E[<c>;..;<c>l
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'm', SET_FONT_STYLE}, // \E[<c>;..;<c>m
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'n', DEVICE_STATUS},
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'r', SET_REGION}, // \E[<y1>;<y2>r
-            // misc
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 't', XTERM_WIN_MANIPULATION, "Window-Manipulation"}, // \E[<y1>;<y2>r
-            // Led Control: has integer beteen '[' and 'q'.
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'q', DEC_LED_SET, "DEC_LED_SET"}, // [0q,[1q,[2q,[3q,[4q
-            // DECTEST: has integer between '['  and 'y'
-            {CTRL_CSI_PREFIX, OPTION_INTEGERS, 'y', DEC_LED_TEST, "DEC_LED_TEST"}, // [0q,[1q,[2q,[3q,[4q
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'T', SCROLL_DOWN_OR_MOUSETRACK},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'X', ERASE_CHARS},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'Z', BACKWARD_TABS},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'd', SET_ROW},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'f', SET_CURSOR},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'g', HTC_TAB_CLEAR},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'h', SET_MODE},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'l', RESET_MODE},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'm', SET_FONT_STYLE},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'n', DEVICE_STATUS},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'r', SET_REGION, "DECSTBM – Set Top and Bottom Margin"},
+            // Misc
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 't', XTERM_WIN_MANIPULATION, "Window-Manipulation"},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'q', DEC_LED_SET, "DEC_LED_SET"},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'y', DEC_LED_TEST, "DEC_LED_TEST"},
+            // Bug Filters
+            {CTRL_OSC_PREFIX+CTRL_ESC+"(",PARAMETER_CHARSET, null, CHARSET_G0_DES, "YaST Graphics bug"},
             {} // NILL
     };
 
@@ -262,28 +203,32 @@ public class VTxTokenDefs {
         for (int i = 0; i < tokenDefs.length; i++) {
             addPattern(tokenDefs[i]);
         }
+
     }
 
     private void addPattern(Object[] def) {
 
         TokenOption option = null;
-        Character terminatorChar = null;
+        char[] terminatorChars = null;
         if ((def == null) || (def.length == 0)) {
             return;
         }
 
         Object lastObj = def[def.length - 1];
-        // text OR enum resprentation:
+        // text OR enum representation:
         String tokenDescription = lastObj.toString();
 
         Token token;
-        String chars;
+        char[] chars;
 
         if (def.length == 2) {
-            chars = def[0].toString();
+            // CHAR, TOKEN
+            chars = def[0].toString().toCharArray();
             token = (Token) def[1];
         } else if (def.length == 3) {
-            chars = def[0].toString();
+            // PREFIX, TOKEN, DESCRIPTION
+            // PREFIX, OPTION, TOKEN
+            chars = def[0].toString().toCharArray();
             if (def[1] instanceof TokenOption) {
                 option = (TokenOption) def[1];
                 token = (Token) def[2];
@@ -291,18 +236,21 @@ public class VTxTokenDefs {
                 token = (Token) def[1];
                 tokenDescription = (String) def[2];
             } else {
+                log.error("Invalid token def: '{}'", Arrays.toString(def));
                 token = null;
             }
-        } else if ((def.length == 4) || (def.length == 5)) {
-            chars = def[0].toString();
+        } else if ((def.length >= 4)) {
+            // PREFIX, OPTION, TERMINATOR, TOKEN [, DESCRIPTION ]
+            chars = def[0].toString().toCharArray();
             option = (TokenOption) def[1];
             if (def[2] != null) {
-                terminatorChar = def[2].toString().charAt(0);
+                terminatorChars = def[2].toString().toCharArray();
             } else {
-                terminatorChar = null; // prefix token.
+                terminatorChars = null; // prefix token.
             }
             token = (Token) def[3];
         } else {
+            log.debug("Skipping: {}", Arrays.toString(def));
             token = null;
             chars = null;
         }
@@ -311,25 +259,14 @@ public class VTxTokenDefs {
             throw new VTxInvalidConfigurationException("Couldn't parse pattern: " + Arrays.toString(def));
         }
 
-        tokenPatterns.add(TokenDef.createFrom(chars.toCharArray(), option, terminatorChar, token, tokenDescription));
-    }
-
-    public boolean matchPartial(char[] sequence, byte[] pattern, int index) {
-
-        // sequence already to long?
-        if ((sequence == null) || index > sequence.length)
-            return false;
-
-        for (int i = 0; i < index; i++)
-            if (sequence[i] != pattern[i])
-                return false;
-
-        return true;
+        IToken tokenDef=TokenDef.createFrom(chars, option, terminatorChars, token, tokenDescription);
+        tokenPatterns.add(tokenDef);
     }
 
     public boolean matchFully(char[] sequence, byte[] pattern, int index) {
-        if (sequence == null)
+        if (sequence == null) {
             return false;
+        }
 
         // Length must match:
         if (index != sequence.length)
@@ -344,13 +281,23 @@ public class VTxTokenDefs {
         return true;
     }
 
+    public boolean matchPartial(char[] sequence, byte[] pattern, int index) {
+        if ((sequence == null) || index > sequence.length) {
+            return false;
+        }
+
+        for (int i = 0; i < index; i++)
+            if (sequence[i] != pattern[i])
+                return false;
+
+        return true;
+    }
+
     public static Object[] findCharToken(char c) {
 
         for (int i = 0; i < tokenDefs.length; i++) {
             Object[] tokdef = tokenDefs[i];
-            if (tokdef.length == 0) {
-                continue;
-            } else {
+            if (tokdef.length != 0) {
                 // Single Char Token
                 if (tokdef[0].toString().length() == 1) {
                     if (tokdef[0].toString().charAt(0) == c) {
@@ -367,9 +314,12 @@ public class VTxTokenDefs {
     }
 
     /**
-     * Either match FULL token.
-     * Either match FULL PREFIX token
-     * If no FULL token or PREFIX token can be found, match first <em>partial></em> token.
+     * Order of matching:
+     * <ul>
+     * <li> Either match FULL token.
+     * <li> Either match FULL PREFIX token
+     * <li> If no FULL token or PREFIX token can be found, match first <em>partial</em> token.
+     * </ul>
      */
     public IToken findFirst(byte[] pattern, int patternIndex) {
 

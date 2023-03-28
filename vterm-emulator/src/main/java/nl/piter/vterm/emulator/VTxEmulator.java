@@ -10,24 +10,48 @@ package nl.piter.vterm.emulator;
 import lombok.extern.slf4j.Slf4j;
 import nl.piter.vterm.api.CharacterTerminal;
 import nl.piter.vterm.api.EmulatorListener;
+import nl.piter.vterm.api.TermConst;
 import nl.piter.vterm.emulator.Tokens.Token;
-import nl.piter.vterm.ui.charpane.StyleChar;
+import nl.piter.vterm.ui.panels.charpane.EcmaMapping;
 
+import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
-import static nl.piter.vterm.emulator.VTxTokenDefs.CTRL_ESC;
+import static nl.piter.vterm.emulator.Util.byte2hexstr;
+import static nl.piter.vterm.emulator.VTxCharDefs.CTRL_ESC;
+import static nl.piter.vterm.emulator.VTxCharDefs.CTRL_SI;
 
 /**
  * Implementation of most VT100 codes, VT102, and some xterm/xterm-256-color;
  */
 @Slf4j
 public class VTxEmulator implements Emulator {
+
+    public static class DecMode {
+        // DEC MODE(s) (selection needed by vi)
+        protected boolean lcf;
+        protected boolean modeAutoWrap;
+        protected boolean originMode;
+        protected boolean bracketedPasteMode;
+        protected boolean focusEvents;
+
+        public void reset() {
+            // todo: set default on, but actually this is configurable: (see: termcap).
+            modeAutoWrap = true;
+            lcf = false;
+            originMode = false;
+            bracketedPasteMode = false;
+            focusEvents = true;
+        }
+    }
 
     public static class EmulatorState {
 
@@ -38,21 +62,23 @@ public class VTxEmulator implements Emulator {
 
         // tabs
         protected int tabSize = 8;
-
-        // size
-        protected int nr_columns;
-        protected int nr_rows;
-
         // Cursors
-        private boolean applicationCursorKeys;
-        private int savedCursorX;
-        private int savedCursorY;
-        private boolean savedLfc;
+        protected boolean applicationCursorKeys;
+        protected int savedCursorX;
+        protected int savedCursorY;
+        protected boolean savedLfc;
+        protected int savedStyle;
+        protected int savedCharSet;
+        protected String savedCharSetName;
+        protected boolean slowScroll;
+        protected DecMode decMode = new DecMode();
 
-        // DEC MODE(s)
-        protected boolean decModeAutoWrap = false;
-        protected boolean lfc;
-
+        public void reset() {
+            hasRegion = false;
+            tabSize = 8;
+            slowScroll = false;
+            decMode.reset();
+        }
     }
 
     private InputStream errorInput;
@@ -60,7 +86,7 @@ public class VTxEmulator implements Emulator {
 
     private boolean isConnected = false;
     private String termType;
-    private String encoding = "UTF-8";
+    private Charset encoding = StandardCharsets.UTF_8;
 
     private final Object haltMutex = new Object();
     private final Object terminateMutex = new Object();
@@ -78,6 +104,8 @@ public class VTxEmulator implements Emulator {
     private final byte[] single = new byte[1];
     private final EmulatorState state = new EmulatorState();
 
+    private long tokenCounter;
+
     /**
      * Construct new Terminal Emulator. Reads and writes from input- and output- streams and plots to CharacterTerminal.
      */
@@ -85,8 +113,7 @@ public class VTxEmulator implements Emulator {
         setTerm(term);
         setInputStream(inputStream);
         this.outputStream = outputStream;
-        state.nr_columns = term.getNumColumns();
-        state.nr_rows = term.getNumRows();
+        resetState();
     }
 
     void setTerm(CharacterTerminal term) {
@@ -98,28 +125,10 @@ public class VTxEmulator implements Emulator {
     }
 
     /**
-     * Reset states, but do NO disconnect.
+     * Reset states, but does not disconnect.
      */
-    public void reset() {
-        state.nr_columns = term.getNumColumns();
-        state.nr_rows = term.getNumRows();
-    }
-
-    public void send(byte b) throws IOException {
-        single[0] = b;
-        send(single);
-    }
-
-    public void send(byte[] code) throws IOException {
-        if (code == null) {
-            log.error("Cowardly refusing to send NULL bytes");
-            return;
-        }
-
-        synchronized (this.outputStream) {
-            this.outputStream.write(code);
-            this.outputStream.flush();
-        }
+    public void resetState() {
+        state.reset();
     }
 
     /**
@@ -171,40 +180,15 @@ public class VTxEmulator implements Emulator {
         this.termType = type;
     }
 
-    public String getEncoding() {
+    public Charset getEncoding() {
         return this.encoding;
     }
 
-    public void setEncoding(String encoding) {
+    public void setEncoding(Charset encoding) {
         this.encoding = encoding;
     }
 
-    // ======================
-    //
-    // ======================
-
     @Override
-    public void addListener(EmulatorListener listener) {
-        this.listeners.add(listener);
-    }
-
-    @Override
-    public void removeListener(EmulatorListener listener) {
-        this.listeners.remove(listener);
-    }
-
-    protected void fireGraphModeEvent(int type, String text) {
-        for (EmulatorListener listener : listeners) {
-            listener.notifyGraphMode(type, text);
-        }
-    }
-
-    protected void fireResizedEvent(int columns, int rows) {
-        for (EmulatorListener listener : listeners) {
-            listener.notifyResized(columns, rows);
-        }
-    }
-
     public void signalHalt(boolean val) {
         this.signalHalt = val;
 
@@ -214,6 +198,7 @@ public class VTxEmulator implements Emulator {
         }
     }
 
+    @Override
     public void step() {
         // when halted, a notify will execute one step in the terminal
         synchronized (haltMutex) {
@@ -221,6 +206,7 @@ public class VTxEmulator implements Emulator {
         }
     }
 
+    @Override
     public void signalTerminate() {
         this.signalTerminate = true;
 
@@ -229,105 +215,55 @@ public class VTxEmulator implements Emulator {
         }
     }
 
-    public boolean sendSize(int cols, int rows) {
-        state.nr_columns = cols;
-        state.nr_rows = rows;
-        this.state.region_y1 = 0;
-        this.state.region_y2 = rows;
-        log.error("FIXME: sendSize(): Doesn't work");
-        return false;
+    public int numRows() {
+        return term.getNumRows();
     }
 
-    /**
-     * Update terminal size and region without sending control sequences.
-     */
-    public boolean updateRegion(int cols, int rows, int y1, int y2) {
-        state.nr_columns = cols;
-        state.nr_rows = rows;
-        this.state.region_y1 = y1;
-        this.state.region_y2 = y2;
-        return true;
+    public int numColumns() {
+        return term.getNumColumns();
     }
 
+    @Override
     public int[] getRegion() {
-        return new int[]{state.nr_columns, state.nr_rows, this.state.region_y1, this.state.region_y2};
+        return new int[]{numColumns(), numRows(), this.state.region_y1, this.state.region_y2};
     }
-
-    public boolean sendTermSize() {
-        log.warn("sendTermSize():[{},{}]", state.nr_columns, state.nr_rows);
-
-//        int r = state.nr_rows;
-//        int c= state.nr_columns;
-//
-//        byte pr1 = (byte) ('0' + ((r / 10) % 10));
-//        byte pr2 = (byte) ('0' + (r % 10));
-//        byte pc1 = (byte) ('0' + (c / 100) % 10);
-//        byte pc2 = (byte) ('0' + (c / 10) % 10);
-//        byte pc3 = (byte) ('0' + (c % 10));
-//
-//
-//        byte[] bytes = {(byte) CTRL_ESC, '[', '1','8',';', pr1, pr2, ';', pc1, pc2,pc3, 't'};
-//
-//
-//        try {
-//            this.send(bytes);
-//        } catch (IOException e) {
-//            checkIOException(e, true);
-//        }
-
-        return false;
-
-    }
-
-    public void sendTermType() {
-
-        // *** Report from 'vttest' when using it inside xterm.
-        // For some reason when connecting through ssh, this works, but not using
-        // the homebrew 'ptty.lxe'  file. (is does when forking a 'bin/csh' ).
-        // Report is:    <27> [ ? 1 ; 2 c  -- means VT100 with AVO (could be a VT102)
-        // Legend:  AVO = Advanced Video Option
-
-        // I am vt10x compatible:
-        byte[] bytes = {CTRL_ESC, '[', '?', '1', ';', '2', 'c'};
-
-        try {
-            this.send(bytes);
-        } catch (IOException e) {
-            checkIOException(e, true);
-        }
-    }
-
 
     public void start() {
-        state.nr_columns = term.getNumColumns();
-        state.nr_rows = term.getNumRows();
-        this.state.region_y1 = 0;
-        this.state.region_y2 = state.nr_rows;
-
         log.info("<<<Session Started>>>");
+
         setConnected(true);
+        fireStarted();
         while (!signalTerminate) {
             synchronized (haltMutex) {
                 if (this.signalHalt) {
                     try {
+
                         this.haltMutex.wait();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        log.warn("Interupted: {}", e.getMessage());
                     }
                 }
             }
 
             try {
                 nextToken();
-            }
-            // Catch ALL and continue!!
-            catch (Exception e) {
+                tokenCounter++;
+//                if (tokenCounter> 5125) {
+//                    Thread.sleep(500);
+//                }
+            } catch (Exception e) {
                 log.error("nextToken():Exception >>>", e);
-            }
-        }// while
+                signalTerminate = true;
+            } // let RuntimeException pass here.
+        }
 
         setConnected(false);
+        fireStopped();
         log.info("<<<Session Ended>>>");
+    }
+
+    public String getType() {
+        return "VTx";
     }
 
     protected void nextToken() throws IOException {
@@ -357,6 +293,7 @@ public class VTxEmulator implements Emulator {
         if (arg1 > 0) {
             increment = arg1;
         }
+        log.debug("nextToken #{} {}:'{}' with args:{}", tokenCounter, token, tokenizer.getText(), tokenizer.getFormattedArguments());
 
         switch (token) {
             case EOF:
@@ -371,19 +308,21 @@ public class VTxEmulator implements Emulator {
             case DEL:
                 //ignore
                 break;
-            case SEND_TERM_ID:
-                // supported ?
-                log.warn("***Fixme: Request Identify not tested");
-                this.sendTermType();
+            case DECID_SEND_TERM_ID:
+                this.sendPrimaryDA();
                 break;
-            case BEEP:
+            case BEL:
                 term.beep();
+                break;
+            case CHAR:
+                // one or more characters: moves cursor !
+                writeChar(bytes);
                 break;
             case HT: { // HORIZONTAL TAB
                 x = ((x / state.tabSize + 1) * state.tabSize);
-                if (x >= state.nr_columns) {
-                    x = 0;
-                    y += 1;
+                if (x >= numColumns()) {
+                    //HT does not do autonewline:
+                    x = numColumns() - 1;
                 }
                 setCursor(x, y);
                 break;
@@ -392,7 +331,7 @@ public class VTxEmulator implements Emulator {
                 x -= 1;
                 if (x < 0) {
                     y -= 1;
-                    x = state.nr_columns - 1;
+                    x = numColumns() - 1;
                 }
                 setCursor(x, y);
                 break;
@@ -401,14 +340,12 @@ public class VTxEmulator implements Emulator {
             case VT: // Vertical Tab
             case FF: {
                 // MIN(nr_rows,region);
-                int maxy = state.nr_rows;
-                if (state.region_y2 < maxy) {
-                    maxy = state.region_y2;
-                }
+                int maxy = this.getRegionMaxY();
+                int miny = this.getRegionMinY();
                 // Auto LineFeed when y goes out of bounds (or region)
                 if (y + 1 >= maxy) {
                     // scroll REGION
-                    term.scrollRegion(this.state.region_y1, maxy, 1, true);
+                    scrollRegion(miny, maxy, 1, true);
                     y = maxy - 1; // explicit keep cursor in region.
                 } else {
                     y += 1;
@@ -417,11 +354,10 @@ public class VTxEmulator implements Emulator {
                 log.debug("FF: New Cursor (x,y)=[{},{}]", x, y);
                 break;
             }
-            case CR: { // carriage return
+            case CR: // carriage return
                 x = 0;
                 setCursor(x, y);
                 break;
-            }
             case UP:
                 moveCursor(0, -increment);
                 break;
@@ -444,13 +380,15 @@ public class VTxEmulator implements Emulator {
                 if (numIntegers == 0) {
                     //reset
                     state.region_y1 = 0;
-                    state.region_y2 = state.nr_rows;
+                    state.region_y2 = numRows();
                     state.hasRegion = false;
                 } else {
                     state.region_y1 = arg1 - 1; // inclusive ->inclusive (-1)
                     state.region_y2 = arg2; // inclusive -> exclusive (-1+1)
                     state.hasRegion = true;
                 }
+                setCursor(0, state.region_y1);
+                log.debug("SET REGION: {}:{}", state.region_y1, state.region_y2);
                 break;
             }
             case SET_COLUMN: {
@@ -467,36 +405,40 @@ public class VTxEmulator implements Emulator {
                 if (numIntegers > 0)
                     num = arg1;
                 // multi delete is move chars to left
-                term.move(x + num, y, state.nr_columns - x - num, 1, x, y);
+                term.move(x + num, y, numColumns() - x - num, 1, x, y);
                 break;
             }
             case ERASE_CHARS: {
                 int n = arg1;
                 for (int i = 0; i < n; i++)
-                    term.putChar(" ".getBytes(StandardCharsets.UTF_8), x + i, y);
+                    term.putChar(' ', x + i, y);
                 setCursor(x, y);
                 break;
             }
             case DELETE_LINES: {
                 int n = arg1;
                 for (int i = 0; i < n; i++)
-                    for (int j = 0; j < state.nr_columns - 1; j++)
-                        term.putChar((byte) 0x20, j, y + i);
+                    for (int j = 0; j < numColumns() - 1; j++)
+                        term.putChar(' ', j, y + i);
                 setCursor(x, y);
                 break;
             }
-            case INDEX: { // move down
-                if (y + 1 >= this.state.region_y2) {
+            case IND_INDEX: { // move down region
+                int maxy = this.getRegionMaxY();
+                int miny = this.getRegionMinY();
+                if (y + 1 >= maxy) {
                     // move down scrollRegion up:
-                    term.scrollRegion(this.state.region_y1, this.state.region_y2, 1, true);
+                    scrollRegion(miny, maxy, 1, true);
                 } else {
                     y++;
                     setCursor(x, y);
                 }
                 break;
             }
-            case NEXT_LINE: { // move down
-                if (y + 1 >= this.state.region_y2) {
+            case NEL_NEXT_LINE: { // move down
+                int maxy = this.getRegionMaxY();
+
+                if (y + 1 >= maxy) {
                     // move down scrollRegion up:
                     scrollLines(1, true);
                     setCursor(0, y);
@@ -506,10 +448,13 @@ public class VTxEmulator implements Emulator {
                 }
                 break;
             }
-            case REVERSE_INDEX: { // move up
-                if ((y - 1) < this.state.region_y1) {
+            case RI_REVERSE_INDEX: { // move up
+                int miny = this.getRegionMinY();
+                int maxy = this.getRegionMaxY();
+
+                if ((y - 1) < miny) {
                     // move up scrollRegion down:
-                    term.scrollRegion(this.state.region_y1, this.state.region_y2, 1, false);
+                    term.scrollRegion(miny, maxy, 1, false);
                 } else {
                     y--;
                     setCursor(x, y);
@@ -519,12 +464,12 @@ public class VTxEmulator implements Emulator {
             case INSERT_LINES: {
                 //default: one
                 int numlines = 1;
-
-                if (arg1 > 0)
+                if (arg1 > 0) {
                     numlines = arg1 + 1;
-
+                }
                 // insert at current position: scroll down:
-                term.scrollRegion(y, this.state.region_y2, numlines, false);
+                int maxy = this.getRegionMaxY();
+                scrollRegion(y, maxy, numlines, false);
                 break;
             }
             case SET_CURSOR: {
@@ -538,7 +483,11 @@ public class VTxEmulator implements Emulator {
                 else
                     x = 0;
 
-                setCursor(x, y);
+                if (state.decMode.originMode) {
+                    setCursor(x, y + state.region_y1);
+                } else {
+                    setCursor(x, y);
+                }
                 break;
             }
             case LINE_ERASE: {
@@ -549,15 +498,15 @@ public class VTxEmulator implements Emulator {
 
                 if (mode == 0) {
                     // cursor(inclusive) to end of line
-                    term.clearArea(x, y, state.nr_columns, y + 1);
+                    term.clearArea(x, y, numColumns(), y + 1);
                 } else if (mode == 1) {
                     // begin of line to cursor (inclusive)
                     term.clearArea(0, y, x + 1, y + 1);
                 } else if (mode == 2) {
                     // complete line
-                    term.clearArea(0, y, state.nr_columns, y + 1);
+                    term.clearArea(0, y, numColumns(), y + 1);
                 } else {
-                    log.error("LINE_ERASE: unsupported mode:{}", mode);
+                    log.warn("LINE_ERASE: unsupported mode:{}", mode);
                 }
                 break;
             }
@@ -568,110 +517,107 @@ public class VTxEmulator implements Emulator {
 
                 if (mode == 0) {
                     // cursor(inclusive) to end screen
-                    term.clearArea(x, y, state.nr_columns, y); // rest of line
-                    term.clearArea(0, y + 1, state.nr_columns, state.nr_rows);
+                    term.clearArea(x, y, numColumns(), y); // rest of line
+                    term.clearArea(0, y + 1, numColumns(), numRows());
                 } else if (mode == 1) {
                     // begin of screen to cursor (inclusive)
-                    term.clearArea(0, 0, state.nr_columns, y);
+                    term.clearArea(0, 0, numColumns(), y);
                     term.clearArea(0, y, x + 1, y);
                 } else if (mode == 2) {
                     // complete screen
-                    term.clearArea(0, 0, state.nr_columns, state.nr_rows);
+                    term.clearArea(0, 0, numColumns(), numRows());
                     setCursor(0, 0); //reset cursor ?
                 }
                 break;
             }
+            case INSERT_BLANK_CHARS:
+                int num = 1;
+                if (arg1 > 0) {
+                    num = arg1;
+                }
+                // insert and move text from cursor to the right:
+                for (int i = 0; i < num; i++) {
+                    term.move(x, y, numColumns() - x, 1, x + 1, y);
+                    term.putChar(' ', x, y);
+                }
+                break;
             case SET_FONT_STYLE:
-                handleSetFontStyle(term, tokenizer.args().numArgs(), tokenizer.args().ints());
+                handleSetFontStyle(term, tokenizer.args().intArgs());
                 break;
             case DEC_SETMODE:
             case DEC_RESETMODE:
                 boolean decValue = (token.compareTo(Token.DEC_SETMODE) == 0);
-                handleDecMode(term, tokenizer.args().numArgs(), tokenizer.args().ints(), decValue);
+                handleDecMode(term, tokenizer.args().intArgs(), decValue);
                 break;
             case SET_MODE:
             case RESET_MODE:
                 boolean modeValue = (token.compareTo(Token.SET_MODE) == 0);
-                handleSetResetMode(term, tokenizer.args().numArgs(), tokenizer.args().ints(), modeValue);
+                handleSetResetMode(term, tokenizer.args().intArgs(), modeValue);
                 break;
             case DEVICE_STATUS: {
                 if (arg1 == 6) {
-                    log.warn("FIXME: Verify Request Cursor Report");
-                    x = 120;
-                    y = 30;
-
-                    byte px1 = (byte) ('0' + (x / 10) % 10);
-                    byte px2 = (byte) ('0' + x % 10);
-                    byte py1 = (byte) ('0' + (y / 10) % 10);
-                    byte py2 = (byte) ('0' + (y % 10));
-
-                    byte[] sbytes = {(byte) CTRL_ESC, '[', py1, py2, ';', px1, px2, 'R'};
-
-                    this.send(sbytes);
+                    this.sendCursor(x, y);
                 } else {
-                    log.warn("DEVICE_STATUS: Unknown device status mode:{}", arg1);
+                    log.debug("DEVICE_STATUS: Unknown device status mode request:{}", arg1);
                 }
                 break;
             }
-            case CHARSET_G0_UK:
-                term.setCharSet(0, CharacterTerminal.VT_CHARSET_UK);
-                break;
-            case CHARSET_G1_UK:
-                term.setCharSet(1, CharacterTerminal.VT_CHARSET_UK);
-                break;
-            case CHARSET_G0_US:
-                term.setCharSet(0, CharacterTerminal.VT_CHARSET_US);
-                break;
-            case CHARSET_G1_US:
-                term.setCharSet(1, CharacterTerminal.VT_CHARSET_US);
-                break;
-            case CHARSET_G0_GRAPHICS:
-                term.setCharSet(0, CharacterTerminal.VT_CHARSET_GRAPHICS);
-                break;
-            case CHARSET_G1_GRAPHICS:
-                term.setCharSet(1, CharacterTerminal.VT_CHARSET_GRAPHICS);
-                break;
             case CHARSET_G0:
                 term.setCharSet(0);
                 break;
             case CHARSET_G1:
                 term.setCharSet(1);
                 break;
-            case CHAR:
-                // one or more characters: moves cursor !
-                writeChar(bytes);
+            case CHARSET_G0_DES:
+                term.setCharSet(0, mapCharSet(tokenizer.args().charSet()));
                 break;
-            case OSC_GRAPHMODE: {
-                // Graph mode
-                // 1 short title
-                // 2 long title
+            case CHARSET_G1_DES:
+                term.setCharSet(1, mapCharSet(tokenizer.args().charSet()));
+                break;
+            case CHARSET_G2_DES:
+                term.setCharSet(2, mapCharSet(tokenizer.args().charSet()));
+                break;
+            case CHARSET_G3_DES:
+                term.setCharSet(3, mapCharSet(tokenizer.args().charSet()));
+                break;
+            case OSC_GRAPHMODE:
+                // Graph mode: 1 = short title, 2 = long title
                 int type = arg1;
-                log.info("OSC_GRAPHMODE: '{}';'{}'", type, tokenizer.args().strArg());
-                this.fireGraphModeEvent(type, tokenizer.args().strArg());
-                //System.err.println("XGRAPH type="+type+"np="+token.np+","+token.nd+"-"+token.strArg);
+                handleGraphMode(type, tokenizer.args().strArg());
                 break;
-            }
-            case SEND_PRIMARY_DA:
+            case REQ_PRIMARY_DA:
                 if (this.tokenizer.args().numArgs() > 0) {
-                    log.warn("FIXME:SEND_PRIMARY_DA: has argument(s):{}", arg1);
+                    log.debug("Fixme:SEND_PRIMARY_DA: has argument(s):{}", arg1);
                 }
-                sendTermType();
+                sendPrimaryDA();
                 break;
-            case SEND_SECONDARY_DA:
+            case REQ_SECONDARY_DA:
                 if (this.tokenizer.args().numArgs() > 0) {
-                    log.warn("FIXME:SEND_SECONDARY_DA: has argument(s):{}", arg1);
+                    log.debug("Fixme:SEND_SECONDARY_DA: has argument(s):{}", arg1);
                 }
-                sendTermType();
+                sendSecondaryDA();
                 break;
-            case XTERM_WIN_MANIPULATION: {
-                log.warn("FIXME:Token error:{} with args:{}", token, Arrays.toString(tokenizer.args().intArgs()));
+            case REQ_XTVERSION:
+                sendXTVersion();
                 break;
-            }
+            case DEC_SCREEN_ALIGNMENT:
+                decScreenAlignmentTest();
+                break;
+            case DCS_DEVICE_CONTROL_STRING:
+                handleDCS(tokenizer.args().strArg());
+                break;
+            case XTERM_WIN_MANIPULATION:
+                handleWindowManipulation(tokenizer.args().intArgs());
+                log.debug("Fixme:Token error:{} with args:{}", token, Arrays.toString(tokenizer.args().intArgs()));
+                break;
+            case XTERM_SETGET_GRAPHICS:
+                handleXtermSetGetGraphics(tokenizer.args().intArgs());
+                break;
             case ERROR: {
                 String seqstr = Util.prettyByteString(bytes);
                 // vt100 specifies to write checkerboard char:
                 // drawChar('▒');
-                log.warn("FIXME:Token error:{},{},sequence={}", token, tokenizer.getText(encoding + ":"), seqstr);
+                log.debug("Fixme:Token error:{},{},sequence={}", token, tokenizer.getText(), seqstr);
                 break;
             }
             // unsupported, misc:
@@ -684,28 +630,217 @@ public class VTxEmulator implements Emulator {
                 String seqstr = Util.prettyByteString(bytes);
                 // vt100 specifies to write checkerboard char:
                 // drawChar('▒');
-                log.warn("FIXME: Unimplemented Token: {}:'{}'; sequence={}; ('{}') ", token, tokenizer.getText(encoding + ":"), seqstr, tokenizer.getIToken().description());
+                log.debug("Fixme: Unimplemented Token: {}:'{}' with args:'{}'; sequence={}; ('{}') ", token,
+                        tokenizer.getText(),
+                        tokenizer.getFormattedArguments(),
+                        seqstr,
+                        (tokenizer.getIToken() != null) ? tokenizer.getIToken().description() : "<null>");
                 break;
             }
         }// switch (token)
     }
 
-    public void setCursor(int x, int y) {
-        log.trace("setCursor(): {},{}", x, y);
-        term.setCursor(x, y);
+    private void handleXtermSetGetGraphics(int[] intArgs) {
+        if (intArgs.length < 3) {
+            log.debug("handleXtermSetGetGraphics(): not enough argument:{}", Arrays.toString(intArgs));
+            return;
+        }
+        log.debug("handleXtermSetGetGraphics(): {}", Arrays.toString(intArgs));
+
+        int id = intArgs[0];
+        int mode = intArgs[1];
+        int val = intArgs[2];
+        boolean get = (mode == 1);
+        boolean reset = (mode == 2);
+        boolean set = (mode == 3);
+        boolean max = (mode == 4);
+        switch (id) {
+            case 1:
+                // number of color registers
+                if (get) {
+                    //  ok for 1024:
+                    sendXTSMGRAPHICS(1, 0, 1024);
+                } else if (set) {
+                    // ok for val
+                    sendXTSMGRAPHICS(1, 0, val);
+                } else if (reset) {
+                    // reset ok for val
+                    sendXTSMGRAPHICS(1, 0, val);
+                } else if (max) {
+                    // could be more but 1024 is ok:
+                    sendXTSMGRAPHICS(1, 0, 1024);
+                }
+                break;
+            case 2:
+                log.debug("unsupported Sixel graphics args :{}", Arrays.toString(intArgs));
+                break;
+            case 3:
+                log.debug("unsupported ReGIS graphics args :{}", Arrays.toString(intArgs));
+                break;
+        }
+    }
+
+    private void handleWindowManipulation(int[] intArgs) {
+        if (intArgs.length == 0)
+            return;
+
+        int rows = term.getNumRows();
+        int cols = term.getNumColumns();
+
+        int cmd = intArgs[0];
+        switch (cmd) {
+            case 8:
+                if (intArgs.length > 2)
+                    rows = intArgs[1];
+                if (intArgs.length > 3)
+                    cols = intArgs[2];
+                log.warn("XTerm WinMan: setColumnsAndRows: {},{}", cols, rows);
+                term.setColumnsAndRows(cols, rows);
+                break;
+            case 18:
+                log.warn("XTerm, WinMan: request Size: {},{}",cols,rows);
+                this.sendSize(cols, rows);
+                break;
+            default:
+                log.debug("Unsupported Windows Manipulation: {}", Arrays.toString(intArgs));
+        }
+
+    }
+
+    private void handleDCS(String strArg) {
+        log.debug("handleDCS: not implemented: {}", strArg);
+
+        if (strArg.startsWith("+q")) {
+            String[] args = strArg.substring("+q".length()).split(";");
+            for (String hexArg : args) {
+                String val = new String(Util.hex2bytes(hexArg), StandardCharsets.UTF_8);
+                log.debug("- got VAL: {}", val);
+            }
+        }
+
+    }
+
+    private void handleGraphMode(int type, String strArg) {
+        log.debug("OSC_GRAPHMODE: '{}';'{}'", type, strArg);
+        if (type == 4) {
+            log.debug("GraphMode color set/request: '{}'", strArg);
+            setXtermColor(strArg);
+        }
+        if (type == 1 || type == 2) {
+            this.fireGraphModeEvent(type, tokenizer.args().strArg());
+        }
+    }
+
+    private void setXtermColor(String strArg) {
+        log.warn("setXtermColor: {}", strArg);
+
+        String[] pars = strArg.split(";");
+        if (pars.length < 2) {
+            log.warn("Not enough arguments: '{}'", strArg);
+            return;
+        }
+        try {
+            int num = Integer.parseInt(pars[0]);
+            String option = pars[1];
+            if ("?".equals(option)) {
+                sendXtermColor(num, term.getColor(num));
+            } else if (option.startsWith("rgb:")) {
+                String rgb = option.substring("rgb:".length());
+                String[] vals = rgb.split("/");
+                if (vals.length < 3) {
+                    log.warn("Not enough RGB arguments: '{}'", rgb);
+                    return;
+                }
+                int r = Integer.parseInt(vals[0], 16);
+                int g = Integer.parseInt(vals[1], 16);
+                int b = Integer.parseInt(vals[2], 16);
+                log.info("Setting new color: #{}:({},{},{})", num, r, g, b);
+                this.term.setColor(num, new Color(r, g, b));
+            } else {
+                log.debug("Unknown graphmode option in argument: '{}'", strArg);
+            }
+        } catch (NumberFormatException e) {
+            log.error("Failed to parse Color argument:" + strArg, e);
+        }
     }
 
     /**
-     * Wrap around and boundary checks are now done at Emulator Level (here), not CharPane anymore:
+     * Legacy, UTF-8 is now default.
      */
-    public void moveCursor(int dx, int dy) {
-        moveCursor(dx, dy, false);
+    private TermConst.CharSet mapCharSet(Character charSet) {
+        switch (charSet) {
+            case CTRL_SI:
+            case '0':
+                return TermConst.CharSet.CHARSET_GRAPHICS;
+            case 'A':
+                return TermConst.CharSet.CHARSET_UK;
+            case 'B':
+                return TermConst.CharSet.CHARSET_US;
+            case '4':
+                return TermConst.CharSet.CHARSET_DUTCH;
+            case 'C':
+            case '5':
+                return TermConst.CharSet.CHARSET_FINNISH;
+            case 'E':
+            case '6':
+                return TermConst.CharSet.CHARSET_NORDANISH;
+            case 'H':
+            case '7':
+                return TermConst.CharSet.CHARSET_SWEDISH;
+            case 'K':
+                return TermConst.CharSet.CHARSET_GERMAN;
+            case 'R':
+            case 'Q':
+                return TermConst.CharSet.CHARSET_FRENCH;
+            default:
+                return TermConst.CharSet.CHARSET_OTHER;
+        }
+    }
+
+    /**
+     * Feature from 'vttest' (VTTEST).
+     */
+    private void decScreenAlignmentTest() {
+
+        int y1 = 0;
+        int y2 = this.numRows();
+        if (this.state.hasRegion) {
+            y1 = this.state.region_y1;
+            y2 = this.state.region_y2;
+        }
+        byte[] bytes = new byte[1];
+        bytes[0] = (byte) 'E';
+
+        for (int y = y1; y < y2; y++) {
+            for (int x = 0; x < numColumns(); x++) {
+                this.term.putChar(bytes, x, y);
+            }
+        }
+    }
+
+    public void setCursor(int x, int y) {
+        setCursor(x, y, false);
+    }
+
+    /**
+     * Set absolute position, ignores offset, but keeps cursor in region by default
+     */
+    public void setCursor(int x, int y, boolean ignoreRegion) {
+        if (!ignoreRegion && state.hasRegion) {
+            if (y < state.region_y1) {
+                y = state.region_y1;
+            } else if (y >= state.region_y2) {
+                y = state.region_y2;
+            }
+        }
+        this.state.decMode.lcf = false;
+        term.setCursor(x, y);
     }
 
     /**
      * Wrap around and boundary checks are now done at Emulator Level here, not at CharPane anymore:
      */
-    public void moveCursor(int dx, int dy, boolean afterWrite) {
+    public void moveCursor(int dx, int dy) {
 
         int xpos = term.getCursorX();
         int ypos = term.getCursorY();
@@ -714,112 +849,145 @@ public class VTxEmulator implements Emulator {
         int oldx = xpos;
         int oldy = ypos;
 
-        // ----------------
-        // LFC Glitch Mode at End-Of-Line:
-        // ----------------
-        if (afterWrite) {
-            if ((state.decModeAutoWrap) && (xpos == numCs - 1)) {
-                if (!this.state.lfc) {
-                    this.state.lfc = true;
-                    xpos = xpos; // glitch mode: keep at end-of-line (!)
-                } else if (this.state.lfc) {
-                    this.state.lfc = false;
-                    xpos = 0;
-                    ypos++;
-                }
-
-                if (ypos >= numRs) {
-                    ypos--;
-                    // AUTO-SCROLL
-                    scrollLines(1, true);
-                }
-                log.debug("moveCursor(): GLITCH-MODE: {},{} + {},{} => {},{}", oldx, oldy, dx, dy, xpos, ypos);
-                setCursor(xpos, ypos);
-                return;
-            }
-        }
-
-        if (afterWrite) {
-            dx = 1;
-            dy = 0;
-        } else {
-            this.state.lfc = false;
-            // limit cursors movement beyond screen: no autowrap when moving cursors:
-            if (xpos + dx >= numCs) {
-                dx = numCs - xpos - 1;
-            }
-            if (ypos + dy >= numRs) {
-                dy = numRs - ypos - 1;
-            }
+        int miny = 0;
+        int maxy = numRs;
+        if (state.hasRegion) {
+            miny = state.region_y1; // inclusive:
+            maxy = state.region_y2; // exclusive
         }
 
         xpos += dx;
         ypos += dy;
 
-        //X
+        // Limit cursors movement beyond screen: no autowrap when moving cursor:
+        // Also: respect region here:
         if (xpos < 0) {
             xpos = 0;
-        } else if (xpos >= numCs) {
-            // autowrap
-            xpos = xpos % numCs;
-            ypos++;
         }
-        // Y
-        if (ypos < 0) {
-            ypos = 0;
-        } else if (ypos >= numRs) {
-            ypos--;
-            // AUTO-SCROLL
-            scrollLines(1, true);
+        if (xpos >= numCs) {
+            xpos = numCs - 1;
+        }
+        if (ypos >= maxy) {
+            ypos = maxy - 1; // exclusive
+        }
+        if (ypos < miny) {
+            ypos = miny; // inclusive
         }
 
         log.trace("moveCursor(): {},{} + {},{} => {},{}", oldx, oldy, dx, dy, xpos, ypos);
         setCursor(xpos, ypos);
     }
 
-    private void scrollLines(int numLines, boolean up) {
-        term.scrollRegion(this.state.region_y1, this.state.region_y2, numLines, up);
+
+    public int getRegionMinY() {
+        if (state.hasRegion) {
+            return state.region_y1;
+        }
+        return 0;
     }
 
-    private void handleSetFontStyle(CharacterTerminal charTerm, int numIntegers, int[] integers) {
-        log.debug("handle fonstyle:{}", Arrays.toString(Arrays.copyOfRange(integers, 0, numIntegers)));
-        if (numIntegers == 0) {
+    public int getRegionMaxY() {
+        if (state.hasRegion) {
+            return state.region_y2;
+        }
+        return numRows();
+    }
+
+    private void setSlowScroll(boolean value) {
+        this.state.slowScroll = value;
+    }
+
+    private void scrollRegion(int y1, int y2, int numLines, boolean up) {
+        long start = System.currentTimeMillis();
+        term.scrollRegion(y1, y2, numLines, up);
+        if (state.slowScroll) {
+            long end = System.currentTimeMillis();
+            long delta = end - start;
+            if (delta < 100) {
+                try {
+                    Thread.sleep(100 - delta);
+                } catch (InterruptedException e) {
+                    log.warn("Interrupted:" + e.getMessage(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Scroll lines in effective Region.
+     *
+     * @param numLines
+     * @param up
+     */
+    private void scrollLines(int numLines, boolean up) {
+        if (state.hasRegion) {
+            scrollRegion(this.state.region_y1, this.state.region_y2, numLines, up);
+        } else {
+            scrollRegion(0, this.numRows(), numLines, up);
+        }
+    }
+
+    private void autoNewline() {
+        int xpos = 0;
+        int ypos = this.term.getCursorY();
+        ypos++;
+
+        if (ypos >= getRegionMaxY()) {
+            scrollLines(1, true);
+            ypos = getRegionMaxY() - 1;
+        }
+
+        setCursor(xpos, ypos);
+    }
+
+    private void handleSetFontStyle(CharacterTerminal charTerm, int[] args) {
+        log.trace("handleSetFontStyle(): {}", Arrays.toString(args));
+        int numArgs = args.length;
+        if (numArgs == 0) {
             // empty = clear
             charTerm.setDrawStyle(0);
             return;
         }
 
-        int mode = integers[0];
+        // stream parse integers:
+        Iterator<Integer> iterator = Arrays.stream(args).iterator();
+        while (iterator.hasNext()) {
+            int mode = iterator.next(); //#0
 
-        if (((mode == 38) || (mode == 48))) {
-            //XTERM 256 color mode:
-            int ccode = tokenizer.args().intArg(2);
-            if (mode == 38) {
-                charTerm.setDrawForeground(ccode);
-            } else if (mode == 48) {
-                charTerm.setDrawBackground(ccode);
-            }
-            return;
-        }
-
-        for (int i = 0; i < numIntegers; i++) {
-            mode = tokenizer.args().intArg(i);
-
-            if (mode == 0)
-                charTerm.setDrawStyle(0); // reset
-            else if (mode == 1)
-                charTerm.addDrawStyle(StyleChar.STYLE_BOLD);
-            else if (mode == 4)
-                charTerm.addDrawStyle(StyleChar.STYLE_UNDERSCORE);
-            else if (mode == 5) {
-                // blink supported ?
-                charTerm.addDrawStyle(StyleChar.STYLE_BLINK);
-                charTerm.addDrawStyle(StyleChar.STYLE_UBERBOLD);
-            } else if (mode == 7)
-                charTerm.addDrawStyle(StyleChar.STYLE_INVERSE);
-            else if (mode == 8)
-                charTerm.addDrawStyle(StyleChar.STYLE_HIDDEN);
-            else if ((mode >= 30) && (mode <= 37))
+            if (((mode == 38) || (mode == 48))) {
+                boolean isFG = (mode == 38);
+                int subMode = safeNext(iterator, -1); //#1
+                if (subMode == 2) {
+                    if (numArgs >= 5) {
+                        int r = safeNext(iterator, -1); //#2
+                        int g = safeNext(iterator, -1); //#3
+                        int b = safeNext(iterator, -1); //#4
+                        log.debug("RGB subMode: RGB: {},{},{}", r, g, b);
+                        if (isFG) {
+                            charTerm.setDrawForeground(r, g, b);
+                        } else {
+                            charTerm.setDrawBackground(r, g, b);
+                        }
+                    } else {
+                        log.warn("RGB unknown subMode: {}", tokenizer.getFormattedArguments());
+                    }
+                } else if (subMode == 5) {
+                    // XTERM 256 color mode:
+                    int ccode = safeNext(iterator, -1);//#2
+                    log.debug("RGB subMode: index: {}", ccode);
+                    if (isFG) {
+                        charTerm.setDrawForeground(ccode);
+                    } else {
+                        charTerm.setDrawBackground(ccode);
+                    }
+                } else {
+                    log.debug("Unknown color submode: {}:{}", subMode, tokenizer.getFormattedArguments());
+                }
+            } else if (EcmaMapping.hasMode(mode)) {
+                int style = charTerm.getDrawStyle();
+                style = EcmaMapping.apply(style, mode);
+                charTerm.setDrawStyle(style);
+            } else if ((mode >= 30) && (mode <= 37))
                 charTerm.setDrawForeground(mode - 30);
             else if ((mode >= 40) && (mode <= 47))
                 charTerm.setDrawBackground(mode - 40);
@@ -828,121 +996,378 @@ public class VTxEmulator implements Emulator {
             else if (mode == 49)
                 charTerm.setDrawForeground(-1);
             else if ((mode >= 90) && (mode <= 97))
+                // 16 color mode:
                 charTerm.setDrawForeground(mode - 90 + 8);
             else if ((mode >= 100) && (mode <= 107))
+                // 16 color mode:
                 charTerm.setDrawBackground(mode - 100 + 8);
-        }
+            else {
+                log.warn("Unknown font style: {}", mode);
+            }
+        } // wend
 
     }
 
-    private void handleDecMode(CharacterTerminal charTerm, int numIntegers, int[] integers,
+    private void handleDecMode(CharacterTerminal charTerm, int[] args,
                                boolean value) {
-        if (numIntegers == 0)
+        log.debug("DECSETMODE: {}:{}", value ? "SET" : "RESET", Arrays.toString(args));
+        int numArgs = args.length;
+
+        if (numArgs == 0) {
             return; //Reset all ?
+        }
 
-        int mode = integers[0];
+        for (int i = 0; i < numArgs; i++) {
+            int mode = args[i];
 
-        switch (mode) {
-            case 1:
-                this.state.applicationCursorKeys = value;
-                break;
-            case 3: {
-                if (value)
-                    state.nr_columns = 132;
-                else
-                    state.nr_columns = 80;
-                charTerm.setColumns(state.nr_columns);
-                this.fireResizedEvent(state.nr_columns, state.nr_rows);
-                break;
+            switch (mode) {
+                case 1:
+                    this.state.applicationCursorKeys = value;
+                    break;
+                case 3: {
+                    charTerm.setColumns(value ? 132 : 80);
+                    setCursor(0, 0);
+                    clearText();
+                    this.fireResizedEvent(numColumns(), numRows());
+                    break;
+                }
+                case 4:
+                    setSlowScroll(value);
+                    break;
+                case 5:
+                    charTerm.setReverseVideo(value);
+                    break;
+                case 6:
+                    state.decMode.originMode = value;
+                    log.warn("DEC ORIGINMODE: {} for region: {}:{}", value, state.region_y1, state.region_y2);
+                    if (value) {
+                        setCursor(0, state.region_y1);
+                    } else {
+                        state.hasRegion = false;
+                        setCursor(0, 0);
+                    }
+                    break;
+                case 7:
+                    log.warn("DECMODE: DECAWM wrapAround={}", value);
+                    state.decMode.modeAutoWrap = value;
+                    break;
+                case 12: // Start Blinking
+                    charTerm.setCursorOptions(value);
+                    break;
+                case 25:
+                    charTerm.setEnableCursor(value);
+                    break;
+                case 45:
+                    boolean result = charTerm.setAltScreenBuffer(value);
+                    if ((value) && (!result))
+                        log.warn("Fixme: DECMODE: ALT Text Buffer not supported by Character Terminal.");
+                    break;
+                case 1004:
+                    state.decMode.focusEvents = value;
+                    break;
+                case 1034:
+                    // P s = 1034 → Interpret "meta" key, sets eighth bit. (enables the eightBitInput resource).
+                    log.debug("Fixme: Metakey/8bit?{}", value);
+                    break;
+                case 1048: {
+                    if (value)
+                        saveCursor();
+                    else
+                        restoreCursor();
+                    break;
+                }
+                case 1049: {
+                    // switch to als screen + use application cursor keys
+                    if (value) {
+                        saveCursor();
+                        setUseApplicationKeys(value);
+                        charTerm.setAltScreenBuffer(value);
+                        clearText();
+                    }
+                    else {
+                        setUseApplicationKeys(value);
+                        charTerm.setAltScreenBuffer(value);
+                        restoreCursor();
+                    }
+                    break;
+                }
+                case 2004:
+                    state.decMode.bracketedPasteMode = value;
+                    break;
+                default:
+                    log.warn("Fixme:Unknown DEC mode:set({},{})", mode, value);
+                    break;
             }
-            case 4:
-                charTerm.setSlowScroll(value);
-                break;
-            case 7:
-                log.warn("DECMODE: DECAWM wrapAround={}", value);
-                state.decModeAutoWrap = value;
-                break;
-            case 12: // Start Blinking
-                charTerm.setCursorOptions(value);
-                break;
-            case 25:
-                charTerm.setEnableCursor(value);
-                break;
-            case 45:
-                log.warn("Received unsupported DECMODE:Set Alt Screen={}", value);
-                boolean result = charTerm.setAltScreenBuffer(value);
-                if ((value) && (!result))
-                    log.warn("FIXME: DECMODE: Alternative Text Buffer not supported by Character Terminal.");
-                break;
-            case 1034:
-                // P s = 1034 → Interpret "meta" key, sets eighth bit. (enables the eightBitInput resource).
-                log.warn("FIXME: Metakey/8bit?{}", value);
-                break;
-            case 1048:
-                if (value)
-                    saveCursor();
-                else
-                    restoreCursor();
-                break;
-            case 1049: {
-                // switch to als screen + use application cursor keys
-                if (value)
-                    saveCursor();
-                else
-                    restoreCursor();
-                this.state.applicationCursorKeys = value;
-                charTerm.setAltScreenBuffer(value);
-                if (value)
-                    charTerm.clearText();
-                break;
-            }
-            default:
-                log.warn("FIXME:Unknown DEC mode:set({},{})", mode, value);
-                break;
         }
     }
 
-    private void handleSetResetMode(CharacterTerminal charTerm, int numIntegers, int[] integers,
+    private void setUseApplicationKeys(boolean value) {
+        this.state.applicationCursorKeys=value;
+    }
+
+
+    private void clearText() {
+        term.clearArea();
+    }
+
+    private void handleSetResetMode(CharacterTerminal charTerm, int[] args,
                                     boolean value) {
-        if (numIntegers == 0)
+        if (args.length == 0)
             return; //Reset all ?
 
-        int mode = integers[0];
+        int mode = args[0];
 
         if (mode == 4) {
             if (value) {
-                log.warn("FIXME:INSERT (true=insert, false=replace):{}; ", value);
+                log.debug("Fixme:INSERT (true=insert, false=replace):{}; ", value);
             }
         } else {
-            log.warn("FIXME:Unknown SET/RESET mode:{}={}", mode, value);
+            log.debug("Fixme:Unknown SET/RESET mode:{}={}", mode, value);
         }
     }
 
     private void restoreCursor() {
         this.setCursor(state.savedCursorX, state.savedCursorY);
-        this.state.lfc = state.savedLfc;
+        this.state.decMode.lcf = state.savedLfc;
+        term.setDrawStyle(state.savedStyle);
+        term.setCharSet(state.savedCharSet);
+        term.setCharSet(state.savedCharSet, state.savedCharSetName);
     }
 
     private void saveCursor() {
         state.savedCursorX = term.getCursorX();
         state.savedCursorY = term.getCursorY();
-        state.savedLfc = state.lfc;
+        state.savedLfc = state.decMode.lcf;
+        state.savedStyle = term.getDrawStyle();
+        state.savedCharSet = term.getCharSet();
+        state.savedCharSetName = term.getCharSetName(state.savedCharSet);
     }
 
     private void writeChar(byte[] bytes) {
-        term.writeChar(bytes);
-        moveCursor(1, 0, true);
+
+        int oldx = term.getCursorX();
+        int oldy = term.getCursorY();
+        boolean oldLcf = this.state.decMode.lcf;
+
+        if (term.getCursorX() == term.getNumColumns() - 1) {
+            if (this.state.decMode.modeAutoWrap) {
+                if (!this.state.decMode.lcf) {
+                    term.writeChar(bytes);
+                    this.state.decMode.lcf = true;
+                } else {
+                    autoNewline();
+                    term.writeChar(bytes);
+                    this.state.decMode.lcf = false;
+                }
+                log.trace("LCF GlitchMode: {},{} -> {},{} [lcf: {}=>{}", oldx, oldy, term.getCursorX(), term.getCursorY(), oldLcf, state.decMode.lcf);
+            } else {
+                term.writeChar(bytes);
+                autoNewline();
+            }
+        } else {
+            term.writeChar(bytes);
+            moveCursor(1, 0);
+        }
+
     }
 
     public byte[] getKeyCode(String keystr) {
-        byte[] bytes = KeyMappings.getKeyCode(termType, keystr.toUpperCase());
+        String prefix;
+        if (this.state.applicationCursorKeys) {
+            prefix="APP";
+        } else {
+            prefix=termType;
+        }
+
+        byte[] bytes = KeyMappings.getKeyCode(prefix, keystr.toUpperCase());
         if (bytes == null) {
             log.debug("No keymapping for keycode:{}", keystr);
         }
         return bytes;
     }
 
+    // ======================
+    // Send responses:
+    // ======================
+
+    @Override
+    public boolean sendSize(int cols, int rows) {
+        log.debug("Verify me: sendSize: {},{}", cols, rows);
+        String req = String.format("%c[8;%d;%dt", CTRL_ESC, rows, cols, CTRL_ESC);
+        byte[] bytes = req.getBytes(StandardCharsets.UTF_8);
+        log.debug("Sending xterm size: '{}'", Util.prettyByteString(bytes));
+        try {
+            this.send(bytes);
+        } catch (IOException e) {
+            checkIOException(e, true);
+        }
+        return true;
+    }
+
+    private void sendXTSMGRAPHICS(int id, int status, int val) {
+        String req = String.format("%c[?%d;%d;%dS", CTRL_ESC, id, status, val);
+        byte[] bytes = req.getBytes(StandardCharsets.UTF_8);
+        log.debug("sendXTSMGRAPHICS: '{}'", Util.prettyByteString(bytes));
+        try {
+            this.send(bytes);
+        } catch (IOException e) {
+            checkIOException(e, true);
+        }
+    }
+
+
+    private void sendXtermColor(int num, Color c) {
+        // verified?
+        int r = c.getRed();
+        int g = c.getGreen();
+        int b = c.getBlue();
+        String req = String.format("%c]4;%d;rbg:%s/%s/%s%c\\", CTRL_ESC, num,
+                byte2hexstr(r),
+                byte2hexstr(g),
+                byte2hexstr(b), CTRL_ESC);
+        byte[] bytes = req.getBytes(StandardCharsets.UTF_8);
+        log.debug("Sending xterm color: '{}'", Util.prettyByteString(bytes));
+        try {
+            this.send(bytes);
+        } catch (IOException e) {
+            checkIOException(e, true);
+        }
+    }
+
+    private void sendCursor(int x, int y) {
+        // offByOne(!) +x,y:
+        String report = String.format("%c[%d;%dR", CTRL_ESC, y + 1, x + 1);
+        byte[] bytes = report.getBytes(StandardCharsets.UTF_8);
+        log.debug("sendCursor(): {}", Util.prettyByteString(bytes));
+        try {
+            this.send(bytes);
+        } catch (IOException e) {
+            checkIOException(e, true);
+        }
+
+    }
+
+    /**
+     * Send: { CSI, '>', Pp, ';', Pv, ';', Pc, 'c' }
+     * Pp = Term Type
+     * Pv = Version
+     * Pc = firmware version
+     */
+    public void sendPrimaryDA() {
+
+        // Report from 'vttest' when using it inside xterm.
+        // For some reason when connecting through ssh, this works, but not using
+        // the homebrew 'ptty.lxe'  file. (is does when forking a 'bin/csh' ).
+        // Report is:    <27> [ ? 1 ; 2 c  -- means VT100 with AVO (could be a VT102)
+        // Legend: AVO = Advanced Video Option
+
+        // I am vt10x compatible:
+        byte[] bytes = {CTRL_ESC, '[', '?', '1', ';', '2', 'c'};
+
+        try {
+            this.send(bytes);
+        } catch (IOException e) {
+            checkIOException(e, true);
+        }
+    }
+
+    /**
+     * Send: { CSI, '>', Pp, ';', Pv, ';', Pc, 'c' }
+     * Pp = Term Type
+     * Pv = Version
+     * Pc = firmware version
+     */
+    public void sendSecondaryDA() {
+
+        // From XTterm: 0 = VT100, version '115', 0= no firmware
+        byte[] bytes = {CTRL_ESC, '[', '>', '0', ';', '1', '1', '5', ';', '0', 'c'};
+
+        try {
+            this.send(bytes);
+        } catch (IOException e) {
+            checkIOException(e, true);
+        }
+    }
+
+    public void sendXTVersion() {
+        log.debug("Fixme: sendXTVersion()");
+    }
+
+    public void send(byte b) throws IOException {
+        single[0] = b;
+        send(single);
+    }
+
+    public void send(byte[] code) throws IOException {
+        if (code == null || code.length == 0) {
+            log.error("Cowardly refusing to send " + ((code == null) ? "NULL" : "EMPTY") + " bytes");
+            return;
+        }
+
+        // Thanks to AWT this can happen concurrently...
+        synchronized (this.outputStream) {
+            this.outputStream.write(code);
+            this.outputStream.flush();
+        }
+    }
+
     protected void checkIOException(Exception e, boolean sendException) {
         log.error("Exception:" + e.getMessage(), e);
     }
+
+    // ======================
+    // Events
+    // ======================
+
+    @Override
+    public void addListener(EmulatorListener listener) {
+        this.listeners.add(listener);
+    }
+
+    @Override
+    public void removeListener(EmulatorListener listener) {
+        this.listeners.remove(listener);
+    }
+
+    @Override
+    public void setSlowScrolling(boolean val) {
+        this.state.slowScroll = val;
+    }
+
+    @Override
+    public boolean getSlowScrolling() {
+        return this.state.slowScroll;
+    }
+
+    protected void fireGraphModeEvent(int type, String text) {
+        for (EmulatorListener listener : listeners) {
+            listener.notifyTermTitle(type, text);
+        }
+    }
+
+    protected void fireStarted() {
+        for (EmulatorListener listener : listeners) {
+            listener.emulatorStarted();
+        }
+    }
+
+    protected void fireStopped() {
+        for (EmulatorListener listener : listeners) {
+            listener.emulatorStopped();
+        }
+    }
+
+    protected void fireResizedEvent(int columns, int rows) {
+        for (EmulatorListener listener : listeners) {
+            listener.notifyResized(columns, rows);
+        }
+    }
+
+    public static <T> T safeNext(Iterator<T> itertr, T defaultVal) {
+        if (itertr.hasNext()) {
+            return itertr.next();
+        }
+        return defaultVal;
+    }
+
 }

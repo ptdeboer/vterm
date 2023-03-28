@@ -37,6 +37,8 @@ public interface ShellChannel {
 
     void disconnect(boolean waitForTermination) throws IOException;
 
+    String getType();
+
     /**
      * @return terminal type, for example "vt100" or "xterm".
      * @throws IOException
@@ -61,7 +63,7 @@ public interface ShellChannel {
      * supported.
      * @throws IOException
      */
-    boolean setPtyTermSize(int numColumns, int numRows, int widthInPixels, int heightInPixels) throws IOException;
+    boolean sendPtyTermSize(int numColumns, int numRows, int widthInPixels, int heightInPixels) throws IOException;
 
     /**
      * Returns array of int[2]{col,row} or int[4]{col,row,wp,hp} of remote terminal (pty) size.
@@ -78,5 +80,6 @@ public interface ShellChannel {
      * Exit value of shell process.
      */
     int exitValue();
+
 
 }

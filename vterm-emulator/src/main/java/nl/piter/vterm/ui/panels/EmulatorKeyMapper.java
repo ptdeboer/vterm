@@ -5,11 +5,12 @@
  *     See LICENSE.txt for details.
  */
 //---
-package nl.piter.vterm.ui.panel;
+package nl.piter.vterm.ui.panels;
 
 import lombok.extern.slf4j.Slf4j;
 import nl.piter.vterm.api.TerminalKeyListener;
 import nl.piter.vterm.emulator.Emulator;
+import nl.piter.vterm.emulator.VTxCharDefs;
 import nl.piter.vterm.emulator.VTxTokenDefs;
 
 import java.awt.event.KeyEvent;
@@ -41,9 +42,6 @@ public class EmulatorKeyMapper implements TerminalKeyListener, KeyListener {
         // use customizable keystrings:
         String keystr = KeyEvent.getKeyText(keycode);
         int mods = e.getModifiersEx();
-
-        // keystr matches Token String Reprentation: 
-        // (Optionally prefix with "VT52_"/"VT100"  for VT52/VT100 codes:
 
         if (emulator == null) {
             log.warn("*** NO EMULATOR PRESENT ***\n");
@@ -86,7 +84,7 @@ public class EmulatorKeyMapper implements TerminalKeyListener, KeyListener {
                         emulator.send((byte) 0);
                         break;
                     case '[':
-                        emulator.send((byte) VTxTokenDefs.CTRL_ESC);
+                        emulator.send((byte) VTxCharDefs.CTRL_ESC);
                         break;
                     default:
                 }

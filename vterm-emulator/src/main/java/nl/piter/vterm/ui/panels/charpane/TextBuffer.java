@@ -5,7 +5,7 @@
  *     See LICENSE.txt for details.
  */
 //---
-package nl.piter.vterm.ui.charpane;
+package nl.piter.vterm.ui.panels.charpane;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,39 +18,44 @@ import java.awt.*;
 public class TextBuffer {
 
     private StyleChar[][] textBuffer;
-    private int virtualSize = 100;
-    private final int virtualOffset = 0;
     private boolean bufferChanged;
+    //
     private int nrColumns;
     private int nrRows;
+    private int virtualColumns;
+    private int virtualRows;
 
-    public TextBuffer(int cols, int rows) {
-        init(cols, rows, 100);
+    public TextBuffer(int numCs, int numRs, int numVCs, int numVRs) {
+        init(numCs, numRs, numVCs, numVRs);
     }
 
-    public TextBuffer(int numCs, int numRs, int numVRs) {
-        init(numCs, numRs, numVRs);
-    }
-
-    private void init(int cols, int rows, int virtualSize) {
-        this.virtualSize = virtualSize;
+    private void init(int cols, int rows, int virtualCols, int virtualRows) {
         this.nrColumns = cols;
         this.nrRows = rows;
 
-        if (virtualSize < rows)
-            ;
-        virtualSize = rows;
+        if (virtualRows < rows) {
+            virtualRows = rows;
+        }
+        if (virtualCols < cols) {
+            virtualCols = cols;
+        }
 
-        this.textBuffer = new StyleChar[rows][cols];
+        this.virtualColumns = virtualCols;
+        this.virtualRows = virtualRows;
 
-        for (int y = 0; y < rows; y++)
-            for (int x = 0; x < cols; x++)
+
+        this.textBuffer = new StyleChar[virtualRows][virtualColumns];
+
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < cols; x++) {
                 put(x, y, new StyleChar());
+            }
+        }
 
         this.bufferChanged = true;
     }
 
-    public void clearAll() {
+    public void clearRegion() {
         for (int y = 0; y < nrRows; y++)
             for (int x = 0; x < nrColumns; x++)
                 textBuffer[y][x].clear();
@@ -80,9 +85,6 @@ public class TextBuffer {
             val = false;
         else if (x >= textBuffer[y].length)
             val = false;
-        else if (textBuffer[y][x] == null) {
-            val = false;
-        }
 
         return val;
     }
@@ -109,41 +111,26 @@ public class TextBuffer {
         textBuffer[y][x].copyFrom(schar);
     }
 
-    public void resize(int newCs, int newRs, boolean keepContents) {
-        StyleChar[][] oldbuffer = this.textBuffer;
+    public void copyFrom(TextBuffer other, int offsetx, int offsety) {
+        for (int y = 0; y < nrRows; y++) {
+            for (int x = 0; x < nrColumns; x++) {
 
-        int offset = 0;
-        // move current contents up:
-        if (newRs < this.nrRows)
-            offset = nrRows - newRs;
-
-        init(newCs, newRs, virtualSize);
-        // int offy=textBuffer.length-numRs;
-        if (keepContents) {
-            for (int y = 0; y < newCs; y++) {
-                for (int x = 0; x < newCs; x++) {
-                    // copy values from old buffer:
-                    if (oldbuffer != null) {
-                        int sourcey = y + offset;
-                        if ((sourcey < oldbuffer.length) && (x < oldbuffer[sourcey].length))
-                            textBuffer[y][x].copyFrom(oldbuffer[sourcey][x]);
-                    }
+                int otherx = x + offsetx;
+                int othery = y + offsety;
+                // Use actual array metrics:
+                if ((othery >= 0) && (othery < other.textBuffer.length) && (otherx < other.textBuffer[othery].length)) {
+                    textBuffer[y][x] = other.textBuffer[othery][otherx];
                 }
             }
         }
-
-        this.bufferChanged = true;
     }
 
     public void needsRepaint(int x, int y, boolean val) {
+        this.bufferChanged = (this.bufferChanged | val);
         if (!checkBounds(x, y)) {
             return;
         }
-
         textBuffer[y][x].hasChanged = val;
-
-        if (val)
-            this.bufferChanged = true;
     }
 
     public void clear(int x, int y) {
@@ -186,4 +173,14 @@ public class TextBuffer {
     public void dispose() {
         this.textBuffer = null; // nullify object references.
     }
+
+    int rows() {
+        return this.nrRows;
+    }
+
+    int columns() {
+        return this.nrColumns;
+    }
+
+
 }

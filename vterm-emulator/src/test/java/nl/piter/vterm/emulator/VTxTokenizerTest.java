@@ -8,6 +8,7 @@
 package nl.piter.vterm.emulator;
 
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.util.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -15,65 +16,76 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static nl.piter.vterm.emulator.Tokens.Token.CHARSET_G0_DUTCH;
-import static nl.piter.vterm.emulator.VTxTokenDefs.CTRL_ESC;
+import static nl.piter.vterm.emulator.Tokens.Token.*;
+import static nl.piter.vterm.emulator.Tokens.Token.CHARSET_G1_DES;
+import static nl.piter.vterm.emulator.VTxCharDefs.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Selection of sequences.
+ */
 @Slf4j
-public class VTXTokenizerTest {
+public class VTxTokenizerTest {
 
     @Test
     public void chars() throws Exception {
-
         String source = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLNMOPQRSTUVWXYZ0123456789";
-
         byte[] bytes = source.getBytes(StandardCharsets.UTF_8);
         InputStream inps = new ByteArrayInputStream(bytes);
         VTxTokenizer tokenizer = new VTxTokenizer(inps);
-        Tokens.Token token = null;
-
+        Tokens.Token token;
         int index = 0;
 
-        do {
-            token = tokenizer.nextToken();
-
+        while ((token=tokenizer.nextToken())!=EOF) {
             // Text representation parse bytes sequence
             byte[] tokenBytes = tokenizer.getBytes();
-
-            int arg1 = 0;
-            int arg2 = 0;
-
-            int numIntegers = tokenizer.args().numArgs();
-
-            if (numIntegers > 0)
-                arg1 = tokenizer.args().intArg(0);
-
-            if (numIntegers > 1)
-                arg2 = tokenizer.args().intArg(1);
-
-            if (token != Tokens.Token.EOF) {
-                // ASCII
-                Assert.assertEquals("Char #" + index + " mismatch", source.charAt(index), (char) tokenBytes[0]);
-                index++;
-            } else {
-                Assert.assertEquals("Wrong number of Char Tokens", source.length(), index);
-            }
-
-        } while ((token != null) && (token != Tokens.Token.EOF));
-
+            assertThat(token).as("character #%s",index).isEqualTo(CHAR);
+            assertThat((char)tokenBytes[0]).as("character #%s",index).isEqualTo(source.charAt(index++));
+        }
     }
 
     @Test
     public void charsetG0Dutch() throws IOException {
         byte[] source = new byte[]{CTRL_ESC, '(', '4'};
-        testSequence(source, CHARSET_G0_DUTCH, new int[0]);
+        testSequence(source, CHARSET_G0_DES, "4");
     }
 
     @Test
-    public void cursors() throws IOException {
+    public void charsetG0Graphics() throws IOException {
+        byte[] source = new byte[]{CTRL_ESC, '(', '0'};
+        testSequence(source, CHARSET_G0_DES, "0");
+    }
+
+    @Test
+    public void charsetG1Dutch() throws IOException {
+        byte[] source = new byte[]{CTRL_ESC, ')', '4'};
+        testSequence(source, CHARSET_G1_DES, "4");
+    }
+
+    @Test
+    public void charsetG1Graphics() throws IOException {
+        byte[] source = new byte[]{CTRL_ESC, ')', '0'};
+        testSequence(source, CHARSET_G1_DES, new int[0]);
+    }
+
+    @Test
+    public void charsetG0() throws IOException {
+        byte[] source = new byte[]{CTRL_SI,'x'};
+        testSequence(source, CHARSET_G0, new int[0]);
+    }
+
+    @Test
+    public void charsetG1() throws IOException {
+        byte[] source = new byte[]{CTRL_SO,'x'};
+        testSequence(source, CHARSET_G1, (String)null);
+    }
+
+    @Test
+    public void cursorsSingle() throws IOException {
         testSequence(new byte[]{CTRL_ESC, '[', 'A'}, Tokens.Token.UP, new int[0]);
         testSequence(new byte[]{CTRL_ESC, '[', '1', ';', 'A'}, Tokens.Token.UP, new int[]{1});
         testSequence(new byte[]{CTRL_ESC, '[', 'B'}, Tokens.Token.DOWN, new int[0]);
@@ -84,6 +96,17 @@ public class VTXTokenizerTest {
         testSequence(new byte[]{CTRL_ESC, '[', '1', ';', 'D'}, Tokens.Token.LEFT, new int[]{1});
     }
 
+    @Test
+    public void cursorsMulti() throws IOException {
+        byte[] seq = new byte[]{CTRL_ESC, '[', '1', ';', 'A',
+                CTRL_ESC, '[', '2', ';', 'B',
+                CTRL_ESC, '[', '3',';', 'C',
+                CTRL_ESC, '[', '4', ';', 'D'};
+        List<Tokens.Token> tokens = Arrays.asList(UP,DOWN,RIGHT,LEFT);
+        List<Integer> values = Arrays.asList(1,2,3,4);
+        List<String> strValues = new ArrayList<>();
+        testSequence(seq, tokens, values, strValues);
+    }
 
     @Test
     public void decLedSetStartWithEmptyValue() throws IOException {
@@ -96,7 +119,6 @@ public class VTXTokenizerTest {
         byte[] source = new byte[]{CTRL_ESC, '[', ';', 'q'};
         testSequence(source, Tokens.Token.DEC_LED_SET, new int[]{0});
     }
-
 
     @Test
     public void decSetMode() throws IOException {
@@ -122,14 +144,26 @@ public class VTXTokenizerTest {
     @Test
     public void graphMode_emptyList() throws IOException {
         // \[];\007
-        testSequence(new byte[]{CTRL_ESC, ']', ';', 007}, Tokens.Token.OSC_GRAPHMODE, 0, "");
+        testSequence(new byte[]{CTRL_ESC, ']', ';', 007}, Tokens.Token.OSC_GRAPHMODE, 0, null);
     }
 
     @Test
     public void graphMode_setTitle() throws IOException {
         // \[]0;XXXX\007
         testSequence(new byte[]{CTRL_ESC, ']', '0', ';', 'X', 'X', 'X', 'X', 007}, Tokens.Token.OSC_GRAPHMODE, 0, "XXXX");
+    }
 
+    private final char c0chars[]=new char[]{CTRL_NUL, CTRL_BEL, CTRL_BS, CTRL_HT,CTRL_LF, CTRL_VT, CTRL_FF, CTRL_CR};
+    private final Tokens.Token c0tokens[]=new Tokens.Token[]{NUL, BEL, BS,HT,LF,VT,FF,CR};
+
+    @Test
+    public void c0tokensMinimal() throws IOException {
+        byte[] seq = new byte[c0chars.length];
+        for (int i=0;i<seq.length;seq[i]=(byte)c0chars[i],i++);
+        //
+        List<Integer> values = new ArrayList<>();
+        List<String> strValues = new ArrayList<>();
+        testSequence(seq, Arrays.asList(c0tokens), values, strValues);
     }
 
     @Test
@@ -149,6 +183,28 @@ public class VTXTokenizerTest {
         List<String> strValues = List.of();
         testSequence(seq, tokens, values, strValues);
     }
+
+    @Test
+    public void dcsEmptyString() throws IOException {
+        // Nice: ESC ending with ESC:
+        byte[] seq = new byte[]{CTRL_ESC, 'P', CTRL_ESC, '\\',0};
+        List<Tokens.Token> tokens = Arrays.asList(Tokens.Token.DCS_DEVICE_CONTROL_STRING);
+        List<Integer> values = Lists.emptyList();
+        List<String> strValues = Lists.emptyList();
+        testSequence(seq, tokens, values, strValues);
+    }
+
+    @Test
+    public void dcsSingleString() throws IOException {
+        // Nice: ESC ending with ESC:
+        byte[] seq = new byte[]{CTRL_ESC, 'P', 'a','a', 'p', CTRL_ESC, '\\'};
+        List<Tokens.Token> tokens = Arrays.asList(Tokens.Token.DCS_DEVICE_CONTROL_STRING);
+        List<Integer> values = Lists.emptyList();
+        List<String> strValues = Arrays.asList("aap");
+        testSequence(seq, tokens, values, strValues);
+    }
+
+    // --- Helper methods --- //
 
     private void testSequence(byte[] seq, List<Tokens.Token> tokens, List<Integer> intValues, List<String> strValues) throws IOException {
 
@@ -182,6 +238,16 @@ public class VTXTokenizerTest {
             log.debug(" integer at #" + i + " matches:" + tokenizer.args().intArg(i));
         }
     }
+
+    protected void testSequence(byte[] bytes, Tokens.Token expected, String expectedArg) throws IOException {
+        InputStream inps = new ByteArrayInputStream(bytes);
+        VTxTokenizer tokenizer = new VTxTokenizer(inps);
+
+        Tokens.Token token = tokenizer.nextToken();
+        assertThat(token).isEqualTo(expected);
+        assertThat(tokenizer.args().strArg()).isEqualTo(expectedArg);
+    }
+
 
     protected void testSequence(byte[] bytes, Tokens.Token expected, int graphmodeInt, String graphmodeStr) throws IOException {
         InputStream inps = new ByteArrayInputStream(bytes);
