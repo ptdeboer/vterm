@@ -1,3 +1,10 @@
+/*
+ * (C) 2005 - 2012 Virtual Laboratory for eScience (VL-e).
+ * (C) 2012 - 2015 Netherlands eScience Center.
+ * (C) 2005 - 2023 Piter.NL
+ *     See LICENSE.txt for details.
+ */
+//---
 package nl.piter.vterm.ui;
 
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +32,7 @@ import static nl.piter.vterm.ui.VTermConst.VTERM_TERM_TYPE;
 public class VTermSessionManager implements Runnable {
 
     public static final String SESSION_SSH = "SSH";
-    public static final String SESSION_BASH = "BASH";
+    public static final String SESSION_PTY = "PTY";
     public static final String SESSION_TELNET = "TELNET";
     public static final String SESSION_SHELLCHANNEL = "SHELLCHANNEL";
 
@@ -137,12 +144,13 @@ public class VTermSessionManager implements Runnable {
                 log.error("Exception:" + e.getMessage(), e);
             }
 
-        } else if (this.sessionType.compareTo(SESSION_BASH) == 0) {
+        } else if (this.sessionType.compareTo(SESSION_PTY) == 0) {
 
             try {
 
-                TermChannelOptions options = this.getChannelOptions(SESSION_BASH, true);
-                this.shellChannel = this.termProvider.createChannel(SESSION_BASH, null, null, null,
+                TermChannelOptions options = this.getChannelOptions(SESSION_PTY, true);
+                URI uri = new URI("file", null, null, 0, SysEnv.sysEnv().getUserHome(), null, null);
+                this.shellChannel = this.termProvider.createChannel(SESSION_PTY, uri, null, null,
                         options, this.termUI);
                 shellChannel.connect();
 
@@ -255,7 +263,7 @@ public class VTermSessionManager implements Runnable {
 
     public void terminate() throws IOException {
         if (this.shellChannel != null) {
-            this.shellChannel.disconnect(false);
+            this.shellChannel.disconnect(true);
         }
 
         this.shellChannel = null;
@@ -266,15 +274,25 @@ public class VTermSessionManager implements Runnable {
         TermChannelOptions options = termProvider.getChannelOptions(type);
         if ((autoCreate) && (options == null)) {
             options = TermChannelOptions.create();
-
-            String value = this.properties.getProperty(VTermConst.VTERM_TERM_TYPE);
-            if (!isEmpty(value)) {
-                options.setTermType((String) this.properties.get(VTermConst.VTERM_TERM_TYPE));
-            }
+            addDefault(options, type);
         }
 
         options.setDefaultSize(this.terminalPanel.getRowCount(), this.terminalPanel.getColumnCount());
         return options;
+    }
+
+    public void storeChannelOptions(String type, TermChannelOptions options) {
+        termProvider.setChannelOptions(type, options);
+    }
+
+    private void addDefault(TermChannelOptions options, String type) {
+
+        // VTerm UI default options:
+        String value = this.properties.getProperty(VTermConst.VTERM_TERM_TYPE);
+        if (!isEmpty(value)) {
+            options.setTermType((String) this.properties.get(VTermConst.VTERM_TERM_TYPE));
+        }
+
     }
 
     public void setChannelOptions(String type, TermChannelOptions options) {
@@ -301,13 +319,15 @@ public class VTermSessionManager implements Runnable {
         boolean channelSupported;
 
         try {
-            if (shellChannel != null) {
+            if ((shellChannel != null) && this.getEmulator() != null) {
                 this.getEmulator().signalHalt(true);
                 channelSupported = this.shellChannel.sendPtyTermSize(nr_columns, nr_rows, widthInPixels, heightInPixels);
                 this.getEmulator().signalHalt(false);
                 if (!channelSupported) {
                     log.error("Channel doesn't support updating resize:{}", this.shellChannel.getType());
                 }
+            } else {
+                log.warn("Channel or Emulator not (yet) running.");
             }
         } catch (IOException e) {
             log.error("IOException: Couldn't send (pty)terminal size:" + e.getMessage(), e);
@@ -447,9 +467,9 @@ public class VTermSessionManager implements Runnable {
             }
 
             if (val == 0)
-                log.info("BASH Stopped normally. Exit value is 0.");
+                log.info("Shell {} Stopped normally. Exit value is 0.", shellProc.getType());
             else
-                log.error("*** Bash died abnormally. Exit value={}", val);
+                log.error("Shell {} died abnormally. Exit value={}", shellProc.getType(), val);
 
             shellEmu.signalTerminate();
         };
@@ -479,9 +499,9 @@ public class VTermSessionManager implements Runnable {
 
     public void resizeTerminalToAWT() {
         terminalPanel.resizeTerminalToAWTSize();
-        int rows=terminalPanel.getRowCount();
-        int cols= terminalPanel.getColumnCount();
-        sendTermSize(cols,rows, terminalPanel.getSize().width, terminalPanel.getSize().height);
+        int rows = terminalPanel.getRowCount();
+        int cols = terminalPanel.getColumnCount();
+        sendTermSize(cols, rows, terminalPanel.getSize().width, terminalPanel.getSize().height);
     }
 
 }

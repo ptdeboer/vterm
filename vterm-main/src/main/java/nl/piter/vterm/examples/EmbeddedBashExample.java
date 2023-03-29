@@ -1,3 +1,10 @@
+/*
+ * (C) 2005 - 2012 Virtual Laboratory for eScience (VL-e).
+ * (C) 2012 - 2015 Netherlands eScience Center.
+ * (C) 2005 - 2023 Piter.NL
+ *     See LICENSE.txt for details.
+ */
+//---
 package nl.piter.vterm.examples;
 
 import nl.piter.vterm.emulator.VTermChannelProvider;
@@ -21,20 +28,21 @@ public class EmbeddedBashExample {
     }
 
     public EmbeddedBashExample() {
-        JFrame frame=new JFrame();
+        JFrame frame = new JFrame();
         frame.setLayout(new BorderLayout());
-        VTermPanel vtermPanel=new VTermPanel();
-        frame.add(vtermPanel,BorderLayout.CENTER);
+        VTermPanel vtermPanel = new VTermPanel();
+        frame.add(vtermPanel, BorderLayout.CENTER);
 
-        ControllerAdaptor controller=new ControllerAdaptor();
+        ControllerAdaptor controller = new ControllerAdaptor();
         vtermManager = new VTermSessionManager(controller, controller, new VTermChannelProvider(), vtermPanel);
+        vtermPanel.addComponentListener(new ResizeAdaptor(vtermManager));
 
         frame.pack();
         frame.setVisible(true);
     }
 
     private void start() throws URISyntaxException {
-        vtermManager.startSession("BASH",new URI("file:///"));
+        vtermManager.startSession("PTY", new URI("file:///"));
     }
 
 }

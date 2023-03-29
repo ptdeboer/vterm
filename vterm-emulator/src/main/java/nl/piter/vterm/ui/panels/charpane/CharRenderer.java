@@ -407,7 +407,7 @@ public class CharRenderer {
         else
             imageGraphics.setFont(fontPlain);
 
-        Graphics2D g2d = (Graphics2D) imageGraphics;
+        Graphics2D g2d = imageGraphics;
 
         if (this.fontInfo.getRenderingHints() != null) {
             g2d.setRenderingHints(fontInfo.getRenderingHints());
@@ -423,8 +423,8 @@ public class CharRenderer {
             imageGraphics.setColor(shadedFG);
             imageGraphics.drawString(encoded, imgx - 1, basey);
             imageGraphics.drawString(encoded, imgx + 1, basey);
-            imageGraphics.drawString(encoded, imgx, basey -1);
-            imageGraphics.drawString(encoded, imgx, basey +1);
+            imageGraphics.drawString(encoded, imgx, basey - 1);
+            imageGraphics.drawString(encoded, imgx, basey + 1);
             imageGraphics.setColor(fg);
             imageGraphics.drawString(encoded, imgx, basey);
         } else {

@@ -144,7 +144,7 @@ public class ColorMap extends ArrayList<Color> {
     };
 
     public static final ColorMap COLOR_MAP_WHITE_ON_BLACK = new ColorMap(Color.WHITE, Color.BLACK, colorMapWhite);
-    public static final ColorMap COLOR_MAP_WHITE_SOFT = new ColorMap(new Color(240,240,240), Color.BLACK, colorMapWhiteSoft);
+    public static final ColorMap COLOR_MAP_WHITE_SOFT = new ColorMap(new Color(240, 240, 240), Color.BLACK, colorMapWhiteSoft);
     public static final ColorMap COLOR_MAP_GREEN_ON_BLACK = new ColorMap(Color.BLACK, Color.GREEN, colorMapDarkGreen16);
     public static final ColorMap COLOR_MAP_SHADED_GREEN = new ColorMap(Color.BLACK, Color.GREEN, colorMapShadedGreen);
     public static final ColorMap COLOR_MAP_PASTEL_PINK = new ColorMap(Color.PINK.brighter(), new Color(128, 64, 64), colorMapPastelPink);
@@ -176,8 +176,9 @@ public class ColorMap extends ArrayList<Color> {
     public static ColorMap getColorMap(String name) {
         Map<String, ColorMap> maps = getColorMaps();
 
-        if (maps != null)
-            return maps.get(name);
+        if (maps != null) {
+            return maps.get(name).duplicate();
+        }
 
         return null;
     }

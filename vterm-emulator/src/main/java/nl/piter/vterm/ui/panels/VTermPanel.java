@@ -201,7 +201,7 @@ public class VTermPanel extends JPanel implements ComponentListener {
     }
 
     public Dimension getTerminalSize() {
-        return new Dimension(this.getColumnCount(),this.getRowCount());
+        return new Dimension(this.getColumnCount(), this.getRowCount());
     }
 
 }

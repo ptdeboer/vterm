@@ -40,18 +40,11 @@ public interface ShellChannel {
     String getType();
 
     /**
-     * @return terminal type, for example "vt100" or "xterm".
-     * @throws IOException
-     */
-    String getPtyTermType() throws IOException;
-
-    /**
      * Tries to set terminal type to underlaying shell channel. For example ror example "vt100" or
      * "xterm".
      *
-     * @return true of terminal type was succesfuly updated. False if terminal type is not
-     * supported.
-     * @throws IOException
+     * @return true of terminal type was successfully updated.
+     * false if terminal type is not supported.
      */
     boolean setPtyTermType(String type) throws IOException;
 

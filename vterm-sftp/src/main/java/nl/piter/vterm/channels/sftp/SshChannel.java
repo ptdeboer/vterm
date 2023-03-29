@@ -97,17 +97,16 @@ public class SshChannel implements ShellChannel {
         if (this.channel != null) {
             this.channel.disconnect();
         }
-        if (this.session !=null) {
+        if (this.session != null) {
             session.close();
             session.dispose();
         }
 
         this.channel = null;
-        // wait
-        if (waitForTermination) {
-            synchronized (this.waitForObject) {
-                this.waitForObject.notifyAll();
-            }
+
+        // signal disconnect:
+        synchronized (this.waitForObject) {
+            this.waitForObject.notifyAll();
         }
     }
 
@@ -121,11 +120,6 @@ public class SshChannel implements ShellChannel {
             return;
         }
         this.channel.setPtySize(col, row, wp, hp);
-    }
-
-    @Override
-    public String getPtyTermType() {
-        return this.options.termType;
     }
 
     public void setPtyType(String type) {

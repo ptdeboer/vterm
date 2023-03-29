@@ -20,6 +20,9 @@ public class StderrWatcher implements Runnable {
 
     public StderrWatcher(InputStream errs) {
         this.errorStream = errs;
+    }
+
+    public void start() {
         new Thread(this).start();
     }
 

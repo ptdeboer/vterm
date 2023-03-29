@@ -8,6 +8,7 @@
 package nl.piter.vterm.api;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Interface for resources which can create a 'Shell'. Typically, a shell has a pseudo tty interface.
@@ -16,6 +17,6 @@ import java.io.IOException;
  */
 public interface ShellChannelFactory {
 
-    ShellChannel createChannel(String username, String host, int port, char[] password, TermChannelOptions options, TermUI ui) throws IOException;
+    ShellChannel createChannel(URI uri, String user, char[] password, TermChannelOptions options, TermUI ui) throws IOException;
 
 }

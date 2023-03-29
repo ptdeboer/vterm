@@ -15,6 +15,7 @@ import nl.piter.vterm.sys.SysEnv;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,7 +35,7 @@ public class BASHChannel implements ShellChannel {
     private InputStream errs = null;
     private int exitValue;
 
-    public BASHChannel(String host, TermChannelOptions options) {
+    public BASHChannel(URI uri, TermChannelOptions options) {
         this.options = options;
     }
 
@@ -155,18 +156,13 @@ public class BASHChannel implements ShellChannel {
                 try {
                     shellProcess.waitFor();
                 } catch (InterruptedException e) {
-                    log.error("Interupted during waitFor(): continuing ... ");
+                    log.error("Interrupted during waitFor(): continuing ... ");
                 }
                 exitValue = shellProcess.exitValue();
                 this.shellProcess = null;
             }
         }
 
-    }
-
-    @Override
-    public String getPtyTermType() {
-        return null;
     }
 
     @Override
@@ -178,30 +174,6 @@ public class BASHChannel implements ShellChannel {
     @Override
     public boolean sendPtyTermSize(int col, int row, int wp, int hp) {
         log.warn("Can't set TERM size to:[{},{},{},{}]", col, row, wp, hp);
-//        try {
-//            // \033[8;h;wt
-//            // printf '\033[8;40;100t'
-//            String str="[8;40;100t";
-//
-//            byte bytes[]=new byte[11];
-//            bytes[0]=27;
-//            bytes[1]=(byte)'[';
-//            bytes[2]=(byte)'8';
-//            bytes[3]=(byte)';';
-//            bytes[4]=(byte)'2';
-//            bytes[5]=(byte)'0';
-//            bytes[6]=(byte)';';
-//            bytes[7]=(byte)'4';
-//            bytes[8]=(byte)'0';
-//            bytes[9]=(byte)'t';
-//            bytes[10]=0;
-//
-//            this.getStdin().write(bytes);
-//            this.getStdin().flush();
-//
-//        }catch (Exception e) {
-//            return false;
-//        }
         return false;
     }
 

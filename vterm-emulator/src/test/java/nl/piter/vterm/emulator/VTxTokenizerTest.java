@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static nl.piter.vterm.emulator.Tokens.Token.*;
-import static nl.piter.vterm.emulator.Tokens.Token.CHARSET_G1_DES;
 import static nl.piter.vterm.emulator.VTxCharDefs.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,11 +39,11 @@ public class VTxTokenizerTest {
         Tokens.Token token;
         int index = 0;
 
-        while ((token=tokenizer.nextToken())!=EOF) {
+        while ((token = tokenizer.nextToken()) != EOF) {
             // Text representation parse bytes sequence
             byte[] tokenBytes = tokenizer.getBytes();
-            assertThat(token).as("character #%s",index).isEqualTo(CHAR);
-            assertThat((char)tokenBytes[0]).as("character #%s",index).isEqualTo(source.charAt(index++));
+            assertThat(token).as("character #%s", index).isEqualTo(CHAR);
+            assertThat((char) tokenBytes[0]).as("character #%s", index).isEqualTo(source.charAt(index++));
         }
     }
 
@@ -74,14 +73,14 @@ public class VTxTokenizerTest {
 
     @Test
     public void charsetG0() throws IOException {
-        byte[] source = new byte[]{CTRL_SI,'x'};
+        byte[] source = new byte[]{CTRL_SI, 'x'};
         testSequence(source, CHARSET_G0, new int[0]);
     }
 
     @Test
     public void charsetG1() throws IOException {
-        byte[] source = new byte[]{CTRL_SO,'x'};
-        testSequence(source, CHARSET_G1, (String)null);
+        byte[] source = new byte[]{CTRL_SO, 'x'};
+        testSequence(source, CHARSET_G1, (String) null);
     }
 
     @Test
@@ -100,10 +99,10 @@ public class VTxTokenizerTest {
     public void cursorsMulti() throws IOException {
         byte[] seq = new byte[]{CTRL_ESC, '[', '1', ';', 'A',
                 CTRL_ESC, '[', '2', ';', 'B',
-                CTRL_ESC, '[', '3',';', 'C',
+                CTRL_ESC, '[', '3', ';', 'C',
                 CTRL_ESC, '[', '4', ';', 'D'};
-        List<Tokens.Token> tokens = Arrays.asList(UP,DOWN,RIGHT,LEFT);
-        List<Integer> values = Arrays.asList(1,2,3,4);
+        List<Tokens.Token> tokens = Arrays.asList(UP, DOWN, RIGHT, LEFT);
+        List<Integer> values = Arrays.asList(1, 2, 3, 4);
         List<String> strValues = new ArrayList<>();
         testSequence(seq, tokens, values, strValues);
     }
@@ -153,13 +152,13 @@ public class VTxTokenizerTest {
         testSequence(new byte[]{CTRL_ESC, ']', '0', ';', 'X', 'X', 'X', 'X', 007}, Tokens.Token.OSC_GRAPHMODE, 0, "XXXX");
     }
 
-    private final char c0chars[]=new char[]{CTRL_NUL, CTRL_BEL, CTRL_BS, CTRL_HT,CTRL_LF, CTRL_VT, CTRL_FF, CTRL_CR};
-    private final Tokens.Token c0tokens[]=new Tokens.Token[]{NUL, BEL, BS,HT,LF,VT,FF,CR};
+    private final char[] c0chars = new char[]{CTRL_NUL, CTRL_BEL, CTRL_BS, CTRL_HT, CTRL_LF, CTRL_VT, CTRL_FF, CTRL_CR};
+    private final Tokens.Token[] c0tokens = new Tokens.Token[]{NUL, BEL, BS, HT, LF, VT, FF, CR};
 
     @Test
     public void c0tokensMinimal() throws IOException {
         byte[] seq = new byte[c0chars.length];
-        for (int i=0;i<seq.length;seq[i]=(byte)c0chars[i],i++);
+        for (int i = 0; i < seq.length; seq[i] = (byte) c0chars[i], i++) ;
         //
         List<Integer> values = new ArrayList<>();
         List<String> strValues = new ArrayList<>();
@@ -187,8 +186,8 @@ public class VTxTokenizerTest {
     @Test
     public void dcsEmptyString() throws IOException {
         // Nice: ESC ending with ESC:
-        byte[] seq = new byte[]{CTRL_ESC, 'P', CTRL_ESC, '\\',0};
-        List<Tokens.Token> tokens = Arrays.asList(Tokens.Token.DCS_DEVICE_CONTROL_STRING);
+        byte[] seq = new byte[]{CTRL_ESC, 'P', CTRL_ESC, '\\', 0};
+        List<Tokens.Token> tokens = List.of(DCS_DEVICE_CONTROL_STRING);
         List<Integer> values = Lists.emptyList();
         List<String> strValues = Lists.emptyList();
         testSequence(seq, tokens, values, strValues);
@@ -197,10 +196,10 @@ public class VTxTokenizerTest {
     @Test
     public void dcsSingleString() throws IOException {
         // Nice: ESC ending with ESC:
-        byte[] seq = new byte[]{CTRL_ESC, 'P', 'a','a', 'p', CTRL_ESC, '\\'};
-        List<Tokens.Token> tokens = Arrays.asList(Tokens.Token.DCS_DEVICE_CONTROL_STRING);
+        byte[] seq = new byte[]{CTRL_ESC, 'P', 'a', 'a', 'p', CTRL_ESC, '\\'};
+        List<Tokens.Token> tokens = List.of(DCS_DEVICE_CONTROL_STRING);
         List<Integer> values = Lists.emptyList();
-        List<String> strValues = Arrays.asList("aap");
+        List<String> strValues = List.of("aap");
         testSequence(seq, tokens, values, strValues);
     }
 

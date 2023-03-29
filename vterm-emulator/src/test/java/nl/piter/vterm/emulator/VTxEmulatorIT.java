@@ -42,11 +42,11 @@ public class VTxEmulatorIT {
     @Test
     public void setCursor() throws IOException {
         // \[[<rows>;<columns>H
-        byte[] bytes = {CTRL_ESC, '[', '1','4', ';', '4','3', 'H'};
-        ByteArrayInputStream inps= new ByteArrayInputStream(bytes);
+        byte[] bytes = {CTRL_ESC, '[', '1', '4', ';', '4', '3', 'H'};
+        ByteArrayInputStream inps = new ByteArrayInputStream(bytes);
         CharacterTerminal charTerm = createCharacterTermMock();
-        charTerm.setCursor(-1,-1);
-        VTxEmulator emulator = new VTxEmulator(charTerm, inps,null);
+        charTerm.setCursor(-1, -1);
+        VTxEmulator emulator = new VTxEmulator(charTerm, inps, null);
         emulator.nextToken();
         // rows-1,cols-1:
         assertThat(charTerm.getCursorY()).isEqualTo(13);
@@ -56,40 +56,40 @@ public class VTxEmulatorIT {
     @Test
     public void sendAndrequestCursor() throws IOException {
         // \[[<rows>;<columns>H
-        byte[] bytes = {CTRL_ESC, '[', '1','4', ';', '4','3', 'H',CTRL_ESC,'[','6', 'n'};
-        ByteArrayInputStream inps= new ByteArrayInputStream(bytes);
+        byte[] bytes = {CTRL_ESC, '[', '1', '4', ';', '4', '3', 'H', CTRL_ESC, '[', '6', 'n'};
+        ByteArrayInputStream inps = new ByteArrayInputStream(bytes);
         ByteArrayOutputStream outps = new ByteArrayOutputStream(1024);
 
         CharacterTerminal charTerm = createCharacterTermMock();
-        charTerm.setCursor(-1,-1);
-        VTxEmulator emulator = new VTxEmulator(charTerm, inps,outps);
+        charTerm.setCursor(-1, -1);
+        VTxEmulator emulator = new VTxEmulator(charTerm, inps, outps);
         emulator.nextToken();
         // rows-1,cols-1:
         assertThat(charTerm.getCursorY()).isEqualTo(13);
         assertThat(charTerm.getCursorX()).isEqualTo(42);
         emulator.nextToken();
         byte[] sendBytes = outps.toByteArray();
-        log.error("Received: {}",Util.prettyByteString(sendBytes));
+        log.error("Received: {}", Util.prettyByteString(sendBytes));
     }
 
     @Test
     public void requestColor() throws IOException {
 
-        int col=123;
-        String req=String.format("%c]4;%d;?%c",CTRL_ESC,col,007);
+        int col = 123;
+        String req = String.format("%c]4;%d;?%c", CTRL_ESC, col, 007);
         byte[] bytes = req.getBytes(StandardCharsets.UTF_8);
 
-        log.debug("Send bytes:{}",Util.prettyByteString(bytes));
+        log.debug("Send bytes:{}", Util.prettyByteString(bytes));
 
-        ByteArrayInputStream inps= new ByteArrayInputStream(bytes);
+        ByteArrayInputStream inps = new ByteArrayInputStream(bytes);
         ByteArrayOutputStream outps = new ByteArrayOutputStream(1024);
 
         CharacterTerminal charTerm = createCharacterTermMock();
-        VTxEmulator emulator = new VTxEmulator(charTerm, inps,outps);
+        VTxEmulator emulator = new VTxEmulator(charTerm, inps, outps);
         emulator.nextToken();
 
         byte[] sendBytes = outps.toByteArray();
-        log.error("Received: {}",Util.prettyByteString(sendBytes));
+        log.error("Received: {}", Util.prettyByteString(sendBytes));
     }
 }
 

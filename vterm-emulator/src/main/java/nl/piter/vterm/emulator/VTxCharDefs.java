@@ -1,3 +1,10 @@
+/*
+ * (C) 2005 - 2012 Virtual Laboratory for eScience (VL-e).
+ * (C) 2012 - 2015 Netherlands eScience Center.
+ * (C) 2005 - 2023 Piter.NL
+ *     See LICENSE.txt for details.
+ */
+//---
 package nl.piter.vterm.emulator;
 
 public class VTxCharDefs {
@@ -33,7 +40,7 @@ public class VTxCharDefs {
     final public static char CTRL_ETX = 0x03; // CTRL-C:
     final public static char CTRL_EOT = 0x04; // CTRL-D: End Of Transission ?
     final public static char CTRL_ENQ = 0x05; // CTRL_E Transmit ANSWERBACK message
-    final public static char CTRL_ACK  = 0x06;
+    final public static char CTRL_ACK = 0x06;
     final public static char CTRL_BEL = 0x07; // CTRL-G: BEEEEEEEEEEEEEEEEP
     final public static char CTRL_BS = 0x08; // CTRL-H: Backspace
     final public static char CTRL_HT = 0x09; // CTRL-I: next stabstop

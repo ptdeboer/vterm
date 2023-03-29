@@ -118,7 +118,7 @@ public class VTxTokenDefsTest {
             assertThat(def2.token()).isEqualTo(DCS_DEVICE_CONTROL_STRING);
         }
         {
-            byte[] bytes3 = new byte[]{CTRL_ESC, 'P', CTRL_ESC,'\\'};
+            byte[] bytes3 = new byte[]{CTRL_ESC, 'P', CTRL_ESC, '\\'};
             IToken def3 = tokenDefs.findFirst(bytes3, 4);
             Assert.assertNotNull(def3);
             log.debug("def2 ={}:{}", def3.token(), def3.description());

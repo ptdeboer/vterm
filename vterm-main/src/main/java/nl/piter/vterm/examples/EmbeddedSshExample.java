@@ -1,3 +1,10 @@
+/*
+ * (C) 2005 - 2012 Virtual Laboratory for eScience (VL-e).
+ * (C) 2012 - 2015 Netherlands eScience Center.
+ * (C) 2005 - 2023 Piter.NL
+ *     See LICENSE.txt for details.
+ */
+//---
 package nl.piter.vterm.examples;
 
 import nl.piter.vterm.channels.sftp.SshChannelFactory;
@@ -22,13 +29,13 @@ public class EmbeddedSshExample {
     }
 
     public EmbeddedSshExample() {
-        JFrame frame=new JFrame();
+        JFrame frame = new JFrame();
         frame.setLayout(new BorderLayout());
-        VTermPanel vtermPanel=new VTermPanel();
-        frame.add(vtermPanel,BorderLayout.CENTER);
+        VTermPanel vtermPanel = new VTermPanel();
+        frame.add(vtermPanel, BorderLayout.CENTER);
 
         // wire controllers:
-        ControllerAdaptor controller=new ControllerAdaptor();
+        ControllerAdaptor controller = new ControllerAdaptor();
         VTermChannelProvider provider = new VTermChannelProvider();
         provider.registerChannelFactory("SSH", new SshChannelFactory());
 
@@ -40,7 +47,7 @@ public class EmbeddedSshExample {
     }
 
     private void start() throws URISyntaxException {
-        vtermManager.startSession("SSH",new URI("ssh://localhost:22/"));
+        vtermManager.startSession("SSH", new URI("ssh://localhost:22/"));
     }
 
 }
