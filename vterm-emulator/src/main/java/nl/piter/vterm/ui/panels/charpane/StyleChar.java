@@ -31,7 +31,7 @@ public class StyleChar {
     public static final int STYLE_HIDDEN = 0x01 << 8;
     public static final int STYLE_STRIKETHROUGH = 0x01 << 9;
     // misc
-    public static final int STYLE_UBERBOLD = 0x01 <<10;
+    public static final int STYLE_UBERBOLD = 0x01 << 10;
     public static final int STYLE_DOUBLE_UNDERSCORE = 0x0001 << 11;
     public static final int STYLE_FRAKTUR = 0x0001 << 13;
     // =====================================================
@@ -83,7 +83,7 @@ public class StyleChar {
         foregroundColor = -1;
         backgroundColor = -1;
         customForeground = null;
-        customBackground =null;
+        customBackground = null;
         hasChanged = true; // needs redraw
         charSet = null;
         alpha = -1;

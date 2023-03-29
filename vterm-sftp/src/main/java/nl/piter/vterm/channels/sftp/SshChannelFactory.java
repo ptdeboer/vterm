@@ -31,13 +31,13 @@ public class SshChannelFactory implements ShellChannelFactory {
 
     public ShellChannel createChannel(URI uri, String user, char[] password, TermChannelOptions options, TermUI ui) throws IOException {
         try {
-            SshSession sshSession = sessionMngr.createFor(user, uri.getHost(),uri.getPort(), ui);
+            SshSession sshSession = sessionMngr.createFor(user, uri.getHost(), uri.getPort(), ui);
             sshSession.connect();
             ChannelShell shellChannel = sshSession.createShellChannel();
             SshChannel sshShellChannel = new SshChannel(sshSession, shellChannel, options);
             return sshShellChannel;
         } catch (JSchException e) {
-            throw new IOException("Failed to createShellChannel for user:"+user+" to: "+uri);
+            throw new IOException("Failed to createShellChannel for user:" + user + " to: " + uri);
         }
     }
 

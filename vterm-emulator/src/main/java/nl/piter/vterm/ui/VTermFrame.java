@@ -27,10 +27,12 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Map;
 
 import static java.awt.event.KeyEvent.VK_F10;
 import static nl.piter.vterm.emulator.Util.isEmpty;
+import static nl.piter.vterm.emulator.Util.splitQuotedArgs;
 import static nl.piter.vterm.ui.VTermConst.*;
 import static nl.piter.vterm.ui.VTermSessionManager.*;
 
@@ -199,7 +201,7 @@ public class VTermFrame extends JFrame {
         // mitem=new JMenuItem("Start Telnet Session..."); menu.add(mitem);
         // mitem.addActionListener(this);
         // mitem.setActionCommand(SESSION_TELNET);
-        startBashMenuItem = new JMenuItem("Start BASH Session...");
+        startBashMenuItem = new JMenuItem("Start Shell Session...");
         menu.add(startBashMenuItem);
         startBashMenuItem.addActionListener(termController);
         startBashMenuItem.setActionCommand(SESSION_PTY);
@@ -459,18 +461,20 @@ public class VTermFrame extends JFrame {
                 cmd = "-1";
             }
 
-            String[] fields=new String[] {"Shell path (no arguments)","Arguments"};
-            String[] values=new String[] {cmd,args};
-            String results[] = Dialogs.askInputDialog(this, "Command argument", fields,values);
+            String[] fields = new String[]{"Shell path (no arguments)", "Arguments"};
+            String[] values = new String[]{cmd, args};
+            String[] results = Dialogs.askInputDialog(this, "Argument (list)", fields, values);
 
-            if ((results==null) || (results.length==0)) {
+            if ((results == null) || (results.length == 0)) {
                 return;
             }
-            cmd=results[0];
-            args=results[1];
 
-            options.setCommand(new String[]{cmd,args});
-            vtermManager.storeChannelOptions(SESSION_PTY,options);
+            cmd = results[0];
+            List<String> argList = splitQuotedArgs(results[1]);
+            argList.add(0, cmd);
+            options.setCommand(argList.toArray(new String[0]));
+
+            vtermManager.storeChannelOptions(SESSION_PTY, options);
             vtermManager.saveConfigProperty(VTermConst.VTERM_SESSION_LAST_SHELL_CMD, cmd);
             vtermManager.saveConfigProperty(VTermConst.VTERM_SESSION_LAST_SHELL_ARGS, args);
             vtermManager.setSessionType(SESSION_PTY);

@@ -186,7 +186,7 @@ public class VTxTokenDefs {
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'q', DEC_LED_SET, "DEC_LED_SET"},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'y', DEC_LED_TEST, "DEC_LED_TEST"},
             // Bug Filters
-            {CTRL_OSC_PREFIX+CTRL_ESC+"(",PARAMETER_CHARSET, null, CHARSET_G0_DES, "YaST Graphics bug"},
+            {CTRL_OSC_PREFIX + CTRL_ESC + "(", PARAMETER_CHARSET, null, CHARSET_G0_DES, "YaST Graphics bug"},
             {} // NILL
     };
 
@@ -259,7 +259,7 @@ public class VTxTokenDefs {
             throw new VTxInvalidConfigurationException("Couldn't parse pattern: " + Arrays.toString(def));
         }
 
-        IToken tokenDef=TokenDef.createFrom(chars, option, terminatorChars, token, tokenDescription);
+        IToken tokenDef = TokenDef.createFrom(chars, option, terminatorChars, token, tokenDescription);
         tokenPatterns.add(tokenDef);
     }
 

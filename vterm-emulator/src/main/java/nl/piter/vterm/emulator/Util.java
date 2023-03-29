@@ -8,6 +8,10 @@
 package nl.piter.vterm.emulator;
 
 import java.io.EOFException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Util {
 
@@ -172,6 +176,7 @@ public class Util {
         return Util.byte2hexstr(c);
     }
 
+
     public static String null2empty(String str) {
         return (str != null) ? str : "";
     }
@@ -183,4 +188,35 @@ public class Util {
     public static int max(int v1, int v2) {
         return (v1 > v2) ? v1 : v2;
     }
+
+    /**
+     * Match various combinations of quoted and unquoted patterns.
+     * Pattern keeps quotes for example if they are needed as shell arguments.
+     */
+    public static final Pattern spacesWithQuotes = Pattern.compile(
+            "(([^\"\\s]+)|(\"[^\"]*\"))+"
+    );
+
+    /**
+     * Split arguments but keeps quoted arguments in quotes.
+     * Works for not to complicated argument constructions. For example:
+     * <pre>
+     *   <em>Split: 'arg1 arg1' => 'arg1', 'arg2'</em>
+     *   <em>Split: 'arg1 "a quote" arg3' => 'arg1', '"a quote"', 'arg3'</em>
+     * For example:
+     *  <em>Split: '-i -script="long path to file' => '-i','-script="long path to file"'.
+     * </pre>
+     */
+    public static List<String> splitQuotedArgs(String source) {
+        Matcher matcher = spacesWithQuotes.matcher(source);
+        List<String> args = new ArrayList();
+
+        while (matcher.find()) {
+            args.add(source.substring(matcher.start(), matcher.end()));
+        }
+
+        return args;
+    }
+
+
 }

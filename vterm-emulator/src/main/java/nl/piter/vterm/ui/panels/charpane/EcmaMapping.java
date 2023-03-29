@@ -1,6 +1,11 @@
+/*
+ * (C) 2005 - 2012 Virtual Laboratory for eScience (VL-e).
+ * (C) 2012 - 2015 Netherlands eScience Center.
+ * (C) 2005 - 2023 Piter.NL
+ *     See LICENSE.txt for details.
+ */
+//---
 package nl.piter.vterm.ui.panels.charpane;
-
-import nl.piter.vterm.ui.panels.EmulatorKeyMapper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,8 +32,8 @@ public class EcmaMapping {
 
     // ---
 
-    private Map<Integer, Integer> onMask = new HashMap<>();
-    private Map<Integer, Integer> offMask = new HashMap<>();
+    private final Map<Integer, Integer> onMask = new HashMap<>();
+    private final Map<Integer, Integer> offMask = new HashMap<>();
 
     public EcmaMapping() {
         registerAll();
@@ -49,6 +54,7 @@ public class EcmaMapping {
         }
         return style;
     }
+
     private void registerAll() {
         register(0, 0, 0x7fffffff);
         register(1, StyleChar.STYLE_BOLD, 0);
@@ -56,7 +62,7 @@ public class EcmaMapping {
         register(3, StyleChar.STYLE_ITALIC, 0);
         register(4, StyleChar.STYLE_UNDERSCORE, 0);
         register(5, StyleChar.STYLE_SLOW_BLINK, 0);
-        register(6, StyleChar.STYLE_FAST_BLINK  | StyleChar.STYLE_UBERBOLD, 0);
+        register(6, StyleChar.STYLE_FAST_BLINK | StyleChar.STYLE_UBERBOLD, 0);
         register(7, StyleChar.STYLE_INVERSE, 0);
         register(8, StyleChar.STYLE_HIDDEN, 0);
         register(9, StyleChar.STYLE_STRIKETHROUGH, 0);

@@ -44,7 +44,7 @@ public interface ShellChannel {
      * "xterm".
      *
      * @return true of terminal type was successfully updated.
-     *         false if terminal type is not supported.
+     * false if terminal type is not supported.
      */
     boolean setPtyTermType(String type) throws IOException;
 

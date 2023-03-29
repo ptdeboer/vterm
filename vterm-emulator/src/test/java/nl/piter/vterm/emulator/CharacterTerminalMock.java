@@ -1,3 +1,10 @@
+/*
+ * (C) 2005 - 2012 Virtual Laboratory for eScience (VL-e).
+ * (C) 2012 - 2015 Netherlands eScience Center.
+ * (C) 2005 - 2023 Piter.NL
+ *     See LICENSE.txt for details.
+ */
+//---
 package nl.piter.vterm.emulator;
 
 import nl.piter.vterm.api.CharacterTerminal;
@@ -19,14 +26,14 @@ public class CharacterTerminalMock implements CharacterTerminal {
 
     protected int currentStyle;
     protected int currentCharSet;
-    protected String[] charSets=new String[16];
+    protected String[] charSets = new String[16];
 
     protected ColorMap colorMap = ColorMap.COLOR_MAP_GREEN_ON_BLACK;
 
     public CharacterTerminalMock() {
         cursorX = 0;
         cursorY = 0;
-        resize(24,80);
+        resize(24, 80);
     }
 
     public void resize(int rows, int cols) {
@@ -63,12 +70,12 @@ public class CharacterTerminalMock implements CharacterTerminal {
 
     @Override
     public void writeChar(byte[] bytes) {
-        chars[cursorY][cursorX]=new String(bytes).charAt(0);
+        chars[cursorY][cursorX] = new String(bytes).charAt(0);
     }
 
     @Override
     public void putChar(byte[] bytes, int x, int y) {
-        chars[y][x]=new String(bytes).charAt(0);
+        chars[y][x] = new String(bytes).charAt(0);
     }
 
     @Override
@@ -77,12 +84,12 @@ public class CharacterTerminalMock implements CharacterTerminal {
 
     @Override
     public void clearArea() {
-        clearArea(0,0,columns,rows);
+        clearArea(0, 0, columns, rows);
     }
 
     @Override
     public void clearArea(int x1, int y1, int x2, int y2) {
-        for (int j=y1;j<y2;j++) {
+        for (int j = y1; j < y2; j++) {
             for (int i = x1; i < x2; i++) {
                 chars[j][i] = 0;
             }
@@ -91,7 +98,7 @@ public class CharacterTerminalMock implements CharacterTerminal {
 
     @Override
     public void reset() {
-        this.currentStyle=0;
+        this.currentStyle = 0;
     }
 
     @Override
@@ -100,7 +107,7 @@ public class CharacterTerminalMock implements CharacterTerminal {
 
     @Override
     public void setColor(int num, Color color) {
-        colorMap.set(num,color);
+        colorMap.set(num, color);
     }
 
     @Override
@@ -110,7 +117,7 @@ public class CharacterTerminalMock implements CharacterTerminal {
 
     @Override
     public void addDrawStyle(int style) {
-        currentStyle=(currentStyle | style);
+        currentStyle = (currentStyle | style);
     }
 
     @Override
@@ -154,7 +161,7 @@ public class CharacterTerminalMock implements CharacterTerminal {
 
     @Override
     public void setCharSet(int nr) {
-        currentCharSet=nr;
+        currentCharSet = nr;
     }
 
     @Override
@@ -164,8 +171,8 @@ public class CharacterTerminalMock implements CharacterTerminal {
 
     @Override
     public void setCharSet(int nr, String str) {
-        currentCharSet=nr;
-        charSets[nr]=str;
+        currentCharSet = nr;
+        charSets[nr] = str;
     }
 
     @Override
@@ -184,12 +191,12 @@ public class CharacterTerminalMock implements CharacterTerminal {
 
     @Override
     public void setColumns(int cols) {
-        resize(cols,this.rows);
+        resize(cols, this.rows);
     }
 
     @Override
     public void setColumnsAndRows(int cols, int rows) {
-        resize(cols,rows);
+        resize(cols, rows);
     }
 
     @Override

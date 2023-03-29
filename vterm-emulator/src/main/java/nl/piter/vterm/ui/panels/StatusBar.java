@@ -1,3 +1,10 @@
+/*
+ * (C) 2005 - 2012 Virtual Laboratory for eScience (VL-e).
+ * (C) 2012 - 2015 Netherlands eScience Center.
+ * (C) 2005 - 2023 Piter.NL
+ *     See LICENSE.txt for details.
+ */
+//---
 package nl.piter.vterm.ui.panels;
 
 import nl.piter.vterm.api.CursorOptions;
@@ -38,6 +45,6 @@ public class StatusBar extends JPanel {
     }
 
     public void setStatusSize(int columns, int rows) {
-        this.sizeInfo.setText("size: ["+columns+"x"+ rows+"]");
+        this.sizeInfo.setText("size: [" + columns + "x" + rows + "]");
     }
 }

@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import nl.piter.vterm.api.TerminalKeyListener;
 import nl.piter.vterm.emulator.Emulator;
 import nl.piter.vterm.emulator.VTxCharDefs;
-import nl.piter.vterm.emulator.VTxTokenDefs;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;

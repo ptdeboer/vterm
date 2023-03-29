@@ -1,3 +1,10 @@
+/*
+ * (C) 2005 - 2012 Virtual Laboratory for eScience (VL-e).
+ * (C) 2012 - 2015 Netherlands eScience Center.
+ * (C) 2005 - 2023 Piter.NL
+ *     See LICENSE.txt for details.
+ */
+//---
 package nl.piter.vterm.ui;
 
 import lombok.extern.slf4j.Slf4j;
@@ -142,7 +149,7 @@ public class VTermSessionManager implements Runnable {
             try {
 
                 TermChannelOptions options = this.getChannelOptions(SESSION_PTY, true);
-                URI  uri=new URI("file",null,null,0,SysEnv.sysEnv().getUserHome(),null,null);
+                URI uri = new URI("file", null, null, 0, SysEnv.sysEnv().getUserHome(), null, null);
                 this.shellChannel = this.termProvider.createChannel(SESSION_PTY, uri, null, null,
                         options, this.termUI);
                 shellChannel.connect();
@@ -267,7 +274,7 @@ public class VTermSessionManager implements Runnable {
         TermChannelOptions options = termProvider.getChannelOptions(type);
         if ((autoCreate) && (options == null)) {
             options = TermChannelOptions.create();
-            addDefault(options,type);
+            addDefault(options, type);
         }
 
         options.setDefaultSize(this.terminalPanel.getRowCount(), this.terminalPanel.getColumnCount());
@@ -275,7 +282,7 @@ public class VTermSessionManager implements Runnable {
     }
 
     public void storeChannelOptions(String type, TermChannelOptions options) {
-        termProvider.setChannelOptions(type,options);
+        termProvider.setChannelOptions(type, options);
     }
 
     private void addDefault(TermChannelOptions options, String type) {
@@ -312,7 +319,7 @@ public class VTermSessionManager implements Runnable {
         boolean channelSupported;
 
         try {
-            if ( (shellChannel != null) && this.getEmulator()!=null) {
+            if ((shellChannel != null) && this.getEmulator() != null) {
                 this.getEmulator().signalHalt(true);
                 channelSupported = this.shellChannel.sendPtyTermSize(nr_columns, nr_rows, widthInPixels, heightInPixels);
                 this.getEmulator().signalHalt(false);
@@ -460,7 +467,7 @@ public class VTermSessionManager implements Runnable {
             }
 
             if (val == 0)
-                log.info("Shell {} Stopped normally. Exit value is 0.",shellProc.getType());
+                log.info("Shell {} Stopped normally. Exit value is 0.", shellProc.getType());
             else
                 log.error("Shell {} died abnormally. Exit value={}", shellProc.getType(), val);
 
@@ -492,9 +499,9 @@ public class VTermSessionManager implements Runnable {
 
     public void resizeTerminalToAWT() {
         terminalPanel.resizeTerminalToAWTSize();
-        int rows=terminalPanel.getRowCount();
-        int cols= terminalPanel.getColumnCount();
-        sendTermSize(cols,rows, terminalPanel.getSize().width, terminalPanel.getSize().height);
+        int rows = terminalPanel.getRowCount();
+        int cols = terminalPanel.getColumnCount();
+        sendTermSize(cols, rows, terminalPanel.getSize().width, terminalPanel.getSize().height);
     }
 
 }

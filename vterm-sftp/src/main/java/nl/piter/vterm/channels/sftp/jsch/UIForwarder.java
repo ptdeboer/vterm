@@ -11,7 +11,6 @@ import com.jcraft.jsch.UIKeyboardInteractive;
 import com.jcraft.jsch.UserInfo;
 import lombok.extern.slf4j.Slf4j;
 import nl.piter.vterm.api.TermUI;
-import nl.piter.vterm.emulator.Util;
 
 import java.util.ArrayList;
 import java.util.List;

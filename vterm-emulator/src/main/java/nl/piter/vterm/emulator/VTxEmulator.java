@@ -698,7 +698,7 @@ public class VTxEmulator implements Emulator {
                 term.setColumnsAndRows(cols, rows);
                 break;
             case 18:
-                log.warn("XTerm, WinMan: request Size: {},{}",cols,rows);
+                log.warn("XTerm, WinMan: request Size: {},{}", cols, rows);
                 this.sendSize(cols, rows);
                 break;
             default:
@@ -1083,8 +1083,7 @@ public class VTxEmulator implements Emulator {
                         setUseApplicationKeys(value);
                         charTerm.setAltScreenBuffer(value);
                         clearText();
-                    }
-                    else {
+                    } else {
                         setUseApplicationKeys(value);
                         charTerm.setAltScreenBuffer(value);
                         restoreCursor();
@@ -1102,7 +1101,7 @@ public class VTxEmulator implements Emulator {
     }
 
     private void setUseApplicationKeys(boolean value) {
-        this.state.applicationCursorKeys=value;
+        this.state.applicationCursorKeys = value;
     }
 
 
@@ -1174,9 +1173,9 @@ public class VTxEmulator implements Emulator {
     public byte[] getKeyCode(String keystr) {
         String prefix;
         if (this.state.applicationCursorKeys) {
-            prefix="APP";
+            prefix = "APP";
         } else {
-            prefix=termType;
+            prefix = termType;
         }
 
         byte[] bytes = KeyMappings.getKeyCode(prefix, keystr.toUpperCase());

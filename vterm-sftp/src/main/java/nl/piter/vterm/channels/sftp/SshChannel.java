@@ -97,7 +97,7 @@ public class SshChannel implements ShellChannel {
         if (this.channel != null) {
             this.channel.disconnect();
         }
-        if (this.session !=null) {
+        if (this.session != null) {
             session.close();
             session.dispose();
         }

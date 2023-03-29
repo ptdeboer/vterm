@@ -10,7 +10,6 @@ package nl.piter.vterm.ui;
 import nl.piter.vterm.api.EmulatorListener;
 import nl.piter.vterm.api.TermUI;
 import nl.piter.vterm.ui.panels.Dialogs;
-import nl.piter.vterm.ui.panels.VTermPanel;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -40,8 +39,8 @@ public class VTermController implements WindowListener, ComponentListener, Emula
     public void componentResized(ComponentEvent e) {
         if (e.getSource() == vtermFrame.getTerminalPanel()) {
             vtermFrame.getVTermManager().resizeTerminalToAWT();
-            Dimension size=vtermFrame.getTerminalPanel().getTerminalSize();
-            vtermFrame.statusPanel().setStatusSize(size.width,size.height);
+            Dimension size = vtermFrame.getTerminalPanel().getTerminalSize();
+            vtermFrame.statusPanel().setStatusSize(size.width, size.height);
         }
     }
 
@@ -104,7 +103,7 @@ public class VTermController implements WindowListener, ComponentListener, Emula
 
     public void notifyResized(int columns, int rows) {
         // This is a notification from the Emulator, Not AWT:
-        vtermFrame.statusPanel().setStatusSize(columns,rows);
+        vtermFrame.statusPanel().setStatusSize(columns, rows);
         vtermFrame.updateFrameSize();
     }
 

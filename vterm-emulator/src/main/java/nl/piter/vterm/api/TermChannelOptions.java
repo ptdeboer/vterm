@@ -36,9 +36,9 @@ public class TermChannelOptions {
     private int defaultColumns;
     private String termType;
     private String[] command;
-    private Map<String,String> env;
+    private Map<String, String> env;
 
-    private final Properties properties=new Properties();
+    private final Properties properties = new Properties();
 
     public void setDefaultSize(int rows, int columns) {
         this.defaultRows = rows;
@@ -51,6 +51,7 @@ public class TermChannelOptions {
     public Properties options() {
         return properties;
     }
+
     public String getOption(String name) {
         return properties.getProperty(name);
     }

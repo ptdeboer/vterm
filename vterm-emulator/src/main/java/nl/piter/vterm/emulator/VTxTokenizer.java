@@ -40,7 +40,7 @@ public class VTxTokenizer {
     // Must be able to hold long (XTERM) string arguments. (title, etc.):
     private final MiniBuffer readAheadBuffer = new MiniBuffer(MAX_MINIBUF);
     private final MiniBuffer patternBuffer = new MiniBuffer(MAX_MINIBUF);
-    private final byte[] one=new byte[1];
+    private final byte[] one = new byte[1];
 
     // input
     private final InputStream inputStream;
@@ -145,8 +145,8 @@ public class VTxTokenizer {
             return readAheadBuffer.pop();
         } else {
             // Use byte buffer to avoid buggy Pty4j InputStream read():
-            int result=inputStream.read(one);
-            if (result<=0)
+            int result = inputStream.read(one);
+            if (result <= 0)
                 return -1;
             return (one[0] & 0x00ff); // mask to positive value;
         }
@@ -192,7 +192,7 @@ public class VTxTokenizer {
             patternBuffer.put(c);
 
             if (c < 0) {
-                log.error("GOT EOF: int: {} => char: '{}'",c,(char)c);
+                log.error("GOT EOF: int: {} => char: '{}'", c, (char) c);
                 return fullMatch(Token.EOF);
             }
             // log character bugger only at finest logging level !
@@ -361,7 +361,7 @@ public class VTxTokenizer {
 
         // === ERROR FALL THROUGH ===
         log.error("*** Error pattern Sequence={}", Util.prettyByteString(patternBuffer.getBytes()));
-        log.error("*** Unexpected char at #{}:0x{}='{}'", patternBuffer.size(), Util.byte2hexstr(this.state.errorChar), (char)this.state.errorChar);
+        log.error("*** Unexpected char at #{}:0x{}='{}'", patternBuffer.size(), Util.byte2hexstr(this.state.errorChar), (char) this.state.errorChar);
         return fullMatch(Token.ERROR);
     }
 
