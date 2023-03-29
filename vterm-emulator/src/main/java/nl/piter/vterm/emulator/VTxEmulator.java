@@ -297,11 +297,11 @@ public class VTxEmulator implements Emulator {
 
         switch (token) {
             case EOF:
-                log.debug("EOF: Connection Closed.");
+                log.warn("EOF: Connection Closed.");
                 signalTerminate = true;
                 break;
             case EOT:
-                log.debug("EOT: Connection Closed.");
+                log.warn("EOT: Connection Closed.");
                 signalTerminate = true;
                 break;
             case NUL:
@@ -732,7 +732,7 @@ public class VTxEmulator implements Emulator {
     }
 
     private void setXtermColor(String strArg) {
-        log.warn("setXtermColor: {}", strArg);
+        log.debug("setXtermColor: {}", strArg);
 
         String[] pars = strArg.split(";");
         if (pars.length < 2) {

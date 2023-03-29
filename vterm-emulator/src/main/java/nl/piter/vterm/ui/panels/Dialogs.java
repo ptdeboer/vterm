@@ -7,6 +7,8 @@
 //---
 package nl.piter.vterm.ui.panels;
 
+import nl.piter.vterm.ui.VTermFrame;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -19,6 +21,29 @@ public class Dialogs {
 
     public Dialogs(JFrame frame) {
         this.frame = frame;
+    }
+
+    public static String[] askInputDialog(Frame frame, String title, String[] fields, String[] values) {
+
+        int numFields = fields.length;
+
+        Object[] inputFields = new Object[numFields * 2];
+        for (int i = 0; i < numFields; i++) {
+            inputFields[i * 2] = fields[i];
+            JTextField tf=new JTextField();
+            tf.setText(values[i]);
+            inputFields[i * 2 + 1] = tf;
+        }
+
+        int result = JOptionPane.showConfirmDialog(frame, inputFields, title, JOptionPane.WARNING_MESSAGE);
+        if (result != JOptionPane.OK_OPTION) {
+            return null;
+        }
+
+        String[] results = new String[numFields];
+        for (int i = 0; i < numFields; i++)
+            results[i] = ((JTextField) inputFields[i * 2+1]).getText();
+        return results;
     }
 
     public void showMessage(String message) {

@@ -75,6 +75,16 @@
         </pluginManagement>
     </build>
 
+
+    <repositories>
+        <repository>
+            <id>jcenter-id</id>
+            <name>JCenter</name>
+            <url>https://jcenter.bintray.com/</url>
+        </repository>
+    </repositories>
+
+
     <distributionManagement>
         <repository>
             <id>${dist.artifactory.releases.id}</id>

@@ -14,10 +14,10 @@ import nl.piter.vterm.api.TermUI;
 
 import java.net.URI;
 
-public class BASHChannelFactory implements ShellChannelFactory {
+public class PtyChannelFactory implements ShellChannelFactory {
 
     @Override
-    public ShellChannel createChannel(URI uri, String user, char[] password, TermChannelOptions options, TermUI ui) {
-        return new BASHChannel(uri, options);
+    public ShellChannel createChannel(URI uri, String username, char[] password, TermChannelOptions options, TermUI ui) {
+        return new PtyChannel(uri.getPath(), options);
     }
 }

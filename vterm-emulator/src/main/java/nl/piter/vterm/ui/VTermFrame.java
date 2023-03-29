@@ -12,7 +12,6 @@ import nl.piter.vterm.api.ShellChannel;
 import nl.piter.vterm.api.TermChannelOptions;
 import nl.piter.vterm.api.TermConst;
 import nl.piter.vterm.emulator.Emulator;
-import nl.piter.vterm.emulator.Util;
 import nl.piter.vterm.emulator.VTermChannelProvider;
 import nl.piter.vterm.sys.SysEnv;
 import nl.piter.vterm.ui.panels.Dialogs;
@@ -31,6 +30,7 @@ import java.net.URISyntaxException;
 import java.util.Map;
 
 import static java.awt.event.KeyEvent.VK_F10;
+import static nl.piter.vterm.emulator.Util.isEmpty;
 import static nl.piter.vterm.ui.VTermConst.*;
 import static nl.piter.vterm.ui.VTermSessionManager.*;
 
@@ -202,7 +202,7 @@ public class VTermFrame extends JFrame {
         startBashMenuItem = new JMenuItem("Start BASH Session...");
         menu.add(startBashMenuItem);
         startBashMenuItem.addActionListener(termController);
-        startBashMenuItem.setActionCommand(SESSION_BASH);
+        startBashMenuItem.setActionCommand(SESSION_PTY);
         menu.add(startBashMenuItem);
         {
             mitem = new JMenuItem("Repaint");
@@ -442,11 +442,40 @@ public class VTermFrame extends JFrame {
         String action = e.getActionCommand();
         Component source = (Component) e.getSource();
 
-        //ChannelOptions options = this.getChannelOptions(); 
+        if (action.compareTo(SESSION_PTY) == 0) {
 
-        if (action.compareTo(SESSION_BASH) == 0) {
-            vtermManager.setSessionType(SESSION_BASH);
+            TermChannelOptions options = vtermManager.getChannelOptions(SESSION_PTY, true);
+
+            String cmd;
+            String args;
+
+            cmd = vtermManager.getConfigProperty(VTermConst.VTERM_SESSION_LAST_SHELL_CMD);
+            args = vtermManager.getConfigProperty(VTermConst.VTERM_SESSION_LAST_SHELL_ARGS);
+
+            if (isEmpty(cmd)) {
+                cmd = "/bin/bash";
+            }
+            if (isEmpty(args)) {
+                cmd = "-1";
+            }
+
+            String[] fields=new String[] {"Shell path (no arguments)","Arguments"};
+            String[] values=new String[] {cmd,args};
+            String results[] = Dialogs.askInputDialog(this, "Command argument", fields,values);
+
+            if ((results==null) || (results.length==0)) {
+                return;
+            }
+            cmd=results[0];
+            args=results[1];
+
+            options.setCommand(new String[]{cmd,args});
+            vtermManager.storeChannelOptions(SESSION_PTY,options);
+            vtermManager.saveConfigProperty(VTermConst.VTERM_SESSION_LAST_SHELL_CMD, cmd);
+            vtermManager.saveConfigProperty(VTermConst.VTERM_SESSION_LAST_SHELL_ARGS, args);
+            vtermManager.setSessionType(SESSION_PTY);
             vtermManager.startSession();
+
         } else if (action.compareTo(SESSION_TELNET) == 0) {
             if (!vtermManager.isRunning()) {
                 vtermManager.setSessionType(SESSION_TELNET);
@@ -486,8 +515,8 @@ public class VTermFrame extends JFrame {
             TermChannelOptions sshOptions = vtermManager.getChannelOptions(SESSION_SSH, true);
 
 
-            String xForwardingHost = sshOptions.getOptions().get(TermConst.SSH_XFORWARDING_HOST);
-            int xForwardingPort = getIntOption(sshOptions.getOptions(), TermConst.SSH_XFORWARDING_PORT, -1);
+            String xForwardingHost = sshOptions.getOption(TermConst.SSH_XFORWARDING_HOST);
+            int xForwardingPort = sshOptions.getIntOption(TermConst.SSH_XFORWARDING_PORT, -1);
 
             String display = JOptionPane.showInputDialog(this, "XDisplay name (hostname:0)",
                     (xForwardingHost == null) ? "" : (xForwardingHost + ":" + xForwardingPort));
@@ -607,13 +636,13 @@ public class VTermFrame extends JFrame {
         String scheme = loc.getScheme();
         String host = loc.getHost();
 
-        if (Util.isEmpty(host)) {
+        if (isEmpty(host)) {
             host = "localhost";
         }
 
         String user = loc.getUserInfo();
 
-        if (Util.isEmpty(user)) {
+        if (isEmpty(user)) {
             user = SysEnv.sysEnv().getUserName();
         }
 

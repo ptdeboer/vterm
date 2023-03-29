@@ -28,13 +28,14 @@ public class EmbeddedBashExample {
 
         ControllerAdaptor controller=new ControllerAdaptor();
         vtermManager = new VTermSessionManager(controller, controller, new VTermChannelProvider(), vtermPanel);
+        vtermPanel.addComponentListener(new ResizeAdaptor(vtermManager));
 
         frame.pack();
         frame.setVisible(true);
     }
 
     private void start() throws URISyntaxException {
-        vtermManager.startSession("BASH",new URI("file:///"));
+        vtermManager.startSession("PTY",new URI("file:///"));
     }
 
 }

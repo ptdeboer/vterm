@@ -40,20 +40,6 @@
                 <unpack>true</unpack>
             </binaries>
         </moduleSet>
-
-        <moduleSet>
-            <useAllReactorProjects>true</useAllReactorProjects>
-            <includes>
-                <include>*:vterm-emulator</include>
-            </includes>
-            <binaries>
-                <attachmentClassifier>bin</attachmentClassifier>
-                <outputDirectory>bin/</outputDirectory>
-                <includeDependencies>false</includeDependencies>
-                <unpack>true</unpack>
-            </binaries>
-        </moduleSet>
-
     </moduleSets>
 
     <fileSets>

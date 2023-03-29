@@ -11,8 +11,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static nl.piter.vterm.api.TermConst.XTERM_256COLOR;
 
@@ -35,7 +35,10 @@ public class TermChannelOptions {
     private int defaultRows;
     private int defaultColumns;
     private String termType;
-    private final Map<String, String> options = new HashMap<>();
+    private String[] command;
+    private Map<String,String> env;
+
+    private final Properties properties=new Properties();
 
     public void setDefaultSize(int rows, int columns) {
         this.defaultRows = rows;
@@ -45,12 +48,15 @@ public class TermChannelOptions {
     /**
      * Channel specific options, for example SSH settings.
      */
-    public Map<String, ?> options() {
-        return options;
+    public Properties options() {
+        return properties;
+    }
+    public String getOption(String name) {
+        return properties.getProperty(name);
     }
 
     public boolean getBooleanOption(String name, boolean defaultValue) {
-        String value = options.get(name);
+        String value = properties.getProperty(name);
         if (value == null) {
             return defaultValue;
         }
@@ -58,7 +64,7 @@ public class TermChannelOptions {
     }
 
     public int getIntOption(String name, int defaultValue) {
-        String value = options.get(name);
+        String value = properties.getProperty(name);
         if (value == null) {
             return defaultValue;
         }
@@ -66,14 +72,14 @@ public class TermChannelOptions {
     }
 
     public void setOption(String name, boolean value) {
-        this.options.put(name, Boolean.toString(value));
+        this.properties.put(name, Boolean.toString(value));
     }
 
     public void setOption(String name, String value) {
-        this.options.put(name, value);
+        this.properties.put(name, value);
     }
 
     public void setOption(String name, int value) {
-        this.options.put(name, Integer.toString(value));
+        this.properties.put(name, Integer.toString(value));
     }
 }

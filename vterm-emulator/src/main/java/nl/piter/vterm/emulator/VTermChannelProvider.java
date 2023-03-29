@@ -11,7 +11,7 @@ import nl.piter.vterm.api.ShellChannel;
 import nl.piter.vterm.api.ShellChannelFactory;
 import nl.piter.vterm.api.TermChannelOptions;
 import nl.piter.vterm.api.TermUI;
-import nl.piter.vterm.channels.impl.BASHChannelFactory;
+import nl.piter.vterm.channels.impl.PtyChannelFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -24,7 +24,7 @@ public class VTermChannelProvider {
     protected Map<String, TermChannelOptions> defaultOptions = new Hashtable<>();
 
     public VTermChannelProvider() {
-        this.registerChannelFactory("BASH", new BASHChannelFactory());
+        this.registerChannelFactory("PTY", new PtyChannelFactory());
     }
 
     public void registerChannelFactory(String type, ShellChannelFactory factory) {
@@ -36,7 +36,7 @@ public class VTermChannelProvider {
         //
         ShellChannelFactory factory = factories.get(type);
         if (factory != null) {
-            return factory.createChannel(username, (uri != null) ? uri.getHost() : null, (uri != null) ? uri.getPort() : 0, password, options, ui);
+            return factory.createChannel(uri, username, password, options, ui);
         }
         throw new IOException("Channel type not supported:" + type + " (when connecting to:" + uri + ")");
     }

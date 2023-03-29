@@ -40,6 +40,7 @@ public class VTxTokenizer {
     // Must be able to hold long (XTERM) string arguments. (title, etc.):
     private final MiniBuffer readAheadBuffer = new MiniBuffer(MAX_MINIBUF);
     private final MiniBuffer patternBuffer = new MiniBuffer(MAX_MINIBUF);
+    private final byte[] one=new byte[1];
 
     // input
     private final InputStream inputStream;
@@ -143,7 +144,11 @@ public class VTxTokenizer {
         if (readAheadBuffer.size() > 0) {
             return readAheadBuffer.pop();
         } else {
-            return inputStream.read();
+            // Use byte buffer to avoid buggy Pty4j InputStream read():
+            int result=inputStream.read(one);
+            if (result<=0)
+                return -1;
+            return (one[0] & 0x00ff); // mask to positive value;
         }
     }
 
@@ -187,6 +192,7 @@ public class VTxTokenizer {
             patternBuffer.put(c);
 
             if (c < 0) {
+                log.error("GOT EOF: int: {} => char: '{}'",c,(char)c);
                 return fullMatch(Token.EOF);
             }
             // log character bugger only at finest logging level !
@@ -335,6 +341,7 @@ public class VTxTokenizer {
                 log.trace("> - state.optIntegersParsed:{}: {}", state.optIntegersParsed, tokenizer.getFormattedArguments());
             }
 
+            // End state:
             if (fullMatch) {
                 log.debug("FULL MATCH: '{}' => sequence: {} with args: {}", itoken.token(),
                         Util.prettyByteString(patternBuffer.getBytes()),
@@ -343,7 +350,7 @@ public class VTxTokenizer {
                 return fullMatch(itoken.token());
             }
 
-            // End state:
+            // Loop
             if (prefixMatch) {
                 continue;
             }

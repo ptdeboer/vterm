@@ -176,8 +176,9 @@ public class ColorMap extends ArrayList<Color> {
     public static ColorMap getColorMap(String name) {
         Map<String, ColorMap> maps = getColorMaps();
 
-        if (maps != null)
-            return maps.get(name);
+        if (maps != null) {
+            return maps.get(name).duplicate();
+        }
 
         return null;
     }
