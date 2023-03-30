@@ -48,7 +48,7 @@ public class VTermSessionManager implements Runnable {
     // Thread, runtime.
     private ShellChannel shellChannel;
     private Thread thread = null;
-    private String sessionType = SESSION_SSH;
+    private String sessionType;
 
     public VTermSessionManager(TermUI termUI, EmulatorListener emulatorListener, VTermChannelProvider termProvider, VTermPanel terminalPanel) {
         this.termUI = termUI;
@@ -85,13 +85,6 @@ public class VTermSessionManager implements Runnable {
         // ================
         // PRE SESSION
         // ================
-        if (startURI == null) {
-            try {
-                startURI = new URI("file", null, SysEnv.sysEnv().getUserHome(), null);
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e);
-            }
-        }
 
         InputStream inps;
         OutputStream outps;
@@ -148,8 +141,10 @@ public class VTermSessionManager implements Runnable {
             try {
 
                 TermChannelOptions options = this.getChannelOptions(SESSION_PTY, true);
-                URI uri = new URI("file", null, null, 0, SysEnv.sysEnv().getUserHome(), null, null);
-                this.shellChannel = this.termProvider.createChannel(SESSION_PTY, uri, null, null,
+                if(startURI==null) {
+                    startURI = new URI("file", null, null, 0, SysEnv.sysEnv().getUserHome(), null, null);
+                }
+                this.shellChannel = this.termProvider.createChannel(SESSION_PTY, startURI, null, null,
                         options, this.termUI);
                 shellChannel.connect();
 
@@ -179,6 +174,9 @@ public class VTermSessionManager implements Runnable {
                 // ================================
                 // Only here is SSHChannel visible!
                 // ================================
+                if (startURI==null) {
+                    throw new NullPointerException("Start URI is null");
+                }
 
                 this.shellChannel = termProvider.createChannel(SESSION_SSH,
                         startURI, startURI.getUserInfo(), null, options, termUI);

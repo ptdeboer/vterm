@@ -392,6 +392,7 @@ public class VTermController implements WindowListener, EmulatorListener,
 
     public void startShellChannel(ShellChannel shellChan, boolean start) {
         sessionManager().setShellChannel(shellChan);
+        sessionManager().setSessionType(SESSION_SHELLCHANNEL);
         if (start) {
             sessionManager().startSession();
         }
