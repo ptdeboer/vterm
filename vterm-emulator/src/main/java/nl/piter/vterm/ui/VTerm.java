@@ -14,6 +14,8 @@ import javax.swing.*;
 import java.io.IOException;
 import java.net.URI;
 
+import static nl.piter.vterm.ui.VTermSessionManager.SESSION_SHELLCHANNEL;
+
 /**
  * The VT10X/XTerm (VTx) emulator: Reads from Tokenizer, output to CharacterTerminal.
  */
@@ -31,25 +33,21 @@ public class VTerm {
         return this;
     }
 
-    public VTerm start(String[] args) {
-        return start(null, null, args);
+    /**
+     * Start from script with arguments.
+     */
+    public VTerm start(String args[]) {
+        return start(null,null,null,args);
     }
 
     /**
      * Start with Custom ShellChannel provided by already authenticated sub system like an SFTP Browser.
      */
     public VTerm start(ShellChannel shellChan, URI optionalLoc) {
-        return start(shellChan, optionalLoc, new String[0]);
+        return start(SESSION_SHELLCHANNEL,shellChan, optionalLoc, new String[0]);
     }
 
-    /**
-     * Used by VBrowser to open a location.
-     */
-    public VTerm start(URI loc) {
-        return start(null, loc, new String[0]);
-    }
-
-    public VTerm start(final ShellChannel shellChan, final URI optionalLocation, String[] args) {
+    public VTerm start(String sessionType, final ShellChannel shellChan, final URI optionalLocation, String args[]) {
         // check args[]
         if (this.channelProvider == null) {
             this.channelProvider = new VTermChannelProvider();
@@ -69,10 +67,9 @@ public class VTerm {
             if (shellChan != null) {
                 vtermJFrame.controller().startShellChannel(shellChan, true);
             }
-
-            if (optionalLocation != null) {
+            else if (optionalLocation != null) {
                 try {
-                    vtermJFrame.controller().openLocation(optionalLocation);
+                    vtermJFrame.controller().openLocation(sessionType, optionalLocation);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

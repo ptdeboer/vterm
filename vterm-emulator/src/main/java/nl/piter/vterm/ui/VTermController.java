@@ -323,7 +323,7 @@ public class VTermController implements WindowListener, EmulatorListener,
         return Integer.parseInt(value);
     }
 
-    protected void openLocation(URI loc) throws IOException {
+    protected void openLocation(String sessionType, URI loc) throws IOException {
         // parse URI:
 
         String scheme = loc.getScheme();
@@ -346,6 +346,7 @@ public class VTermController implements WindowListener, EmulatorListener,
         String path = loc.getPath();
 
         try {
+            sessionManager().setSessionType(sessionType);
             sessionManager().setStartURI(new URI(scheme, user, host, port, path, null, null));
         } catch (URISyntaxException e) {
             throw new IOException(e.getMessage(), e);

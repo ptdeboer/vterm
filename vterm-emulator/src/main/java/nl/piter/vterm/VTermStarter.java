@@ -13,6 +13,8 @@ import nl.piter.vterm.ui.VTerm;
 
 import java.net.URI;
 
+import static nl.piter.vterm.ui.VTermSessionManager.SESSION_SHELLCHANNEL;
+
 /**
  * API binding (from Platinum/VBrowser).
  */
@@ -35,18 +37,13 @@ public class VTermStarter {
         return new VTerm().withVTermChannelProvider(vTermChannelProvider).start(args);
     }
 
-    /**
-     * <p>
-     * Start session with either an authentication ShellChannel or an URI or both.
-     * </p>
-     * If no ShellChannel has been provided the VTerm will try to the provided URI using the VTermChannelProvider.
-     * If a ShellChannel is provided together with an location, the path will be updated.
-     *
-     * @param optShellChannel authenticated shell channel
-     * @param optionalLoc     optional location. Can be combined with authenticated shell channel.
-     */
-    public VTerm start(ShellChannel optShellChannel, URI optionalLoc) {
-        return new VTerm().withVTermChannelProvider(vTermChannelProvider).start(optShellChannel, optionalLoc);
+    public VTerm start(ShellChannel optShellChannel, URI optLocation) {
+        return new VTerm().withVTermChannelProvider(vTermChannelProvider).start(SESSION_SHELLCHANNEL, optShellChannel, optLocation,null);
     }
+
+    public VTerm start(String sessionType, ShellChannel optShellChannel, URI optionalLoc) {
+        return new VTerm().withVTermChannelProvider(vTermChannelProvider).start(sessionType, optShellChannel, optionalLoc,null);
+    }
+
 
 }
