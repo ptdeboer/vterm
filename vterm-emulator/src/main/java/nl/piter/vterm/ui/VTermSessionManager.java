@@ -95,7 +95,9 @@ public class VTermSessionManager implements Runnable {
 
         log.info(">>> Starting Session Type={}", sessionType);
 
-        if (this.sessionType.compareTo(SESSION_TELNET) == 0) {
+        if (sessionType==null) {
+            throw new NullPointerException("SessionTYPE is null");
+        }else if (SESSION_TELNET.equals(this.sessionType)) {
             try {
                 Socket sock = new Socket(startURI.getHost(), startURI.getPort());
                 inps = sock.getInputStream();
@@ -136,7 +138,7 @@ public class VTermSessionManager implements Runnable {
                 log.error("Exception:" + e.getMessage(), e);
             }
 
-        } else if (this.sessionType.compareTo(SESSION_PTY) == 0) {
+        } else if (SESSION_PTY.equals(this.sessionType)) {
 
             try {
 
@@ -167,7 +169,7 @@ public class VTermSessionManager implements Runnable {
                 log.error("Could not start bash. Got exception:" + ex.getMessage(), ex);
                 this.termUI.showError(ex);
             }
-        } else if (this.sessionType.compareTo(SESSION_SSH) == 0) {
+        } else if (SESSION_SSH.equals(this.sessionType)) {
             TermChannelOptions options = this.getChannelOptions(SESSION_SSH, true);
 
             try {
@@ -197,13 +199,13 @@ public class VTermSessionManager implements Runnable {
                 log.error("Exception:" + e.getMessage(), e);
                 termUI.showError(e);
             }
-        } else if (this.sessionType.compareTo(SESSION_SHELLCHANNEL) == 0) {
+        } else if (SESSION_SHELLCHANNEL.equals(this.sessionType)) {
             try {
                 // ================================
                 // API call: use external shell channel
                 // ================================
                 if (this.shellChannel == null) {
-                    throw new IOException("No Shell Channel specified!");
+                    throw new NullPointerException("No Shell Channel specified!");
                 }
 
                 VTxEmulator emulator = new VTxEmulator(this.terminalPanel.getCharacterTerminal(),
@@ -221,6 +223,8 @@ public class VTermSessionManager implements Runnable {
                 log.error("Exception:" + e.getMessage(), e);
                 termUI.showError(e);
             }
+        } else {
+            throw new IllegalStateException("Session type is null or not valid:"+sessionType);
         }
         // ================
         // POST SESSION !!!
