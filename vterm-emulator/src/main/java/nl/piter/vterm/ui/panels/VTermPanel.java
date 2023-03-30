@@ -75,11 +75,11 @@ public class VTermPanel extends JPanel implements ComponentListener {
     }
 
     public int getColumnCount() {
-        return charPane.getNumColumns();
+        return charPane.numColumns();
     }
 
     public int getRowCount() {
-        return charPane.getNumRows();
+        return charPane.numRows();
     }
 
     public FontInfo getFontInfo() {

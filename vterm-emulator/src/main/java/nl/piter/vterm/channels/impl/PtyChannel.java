@@ -13,6 +13,7 @@ import com.pty4j.WinSize;
 import lombok.extern.slf4j.Slf4j;
 import nl.piter.vterm.api.ShellChannel;
 import nl.piter.vterm.api.TermChannelOptions;
+import nl.piter.vterm.api.TermUI;
 import nl.piter.vterm.sys.SysEnv;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ public class PtyChannel implements ShellChannel {
     private final TermChannelOptions options;
     private final String startingPath;
     private final Map<String, String> env;
+    private final TermUI ui;
     private String[] commands;
 
     private InputStream inps;
@@ -40,11 +42,12 @@ public class PtyChannel implements ShellChannel {
     private InputStream errs;
     private PtyProcess ptyProcess;
 
-    public PtyChannel(String path, TermChannelOptions options) {
+    public PtyChannel(String path, TermChannelOptions options, TermUI ui) {
         this.startingPath = path;
         this.options = options;
         this.commands = options.getCommand();
         this.env = options.getEnv();
+        this.ui = ui;
 
         if (this.commands == null) {
             this.commands = new String[]{"/bin/bash", "-i"};
@@ -80,7 +83,7 @@ public class PtyChannel implements ShellChannel {
         Map<String, String> allEnv = (env != null) ? env : new HashMap<>();
         allEnv.put("TERM", options.getTermType());
 
-        log.debug("commands: {}; path={}; env={},", commands, cwd, allEnv);
+        log.warn("commands: {}; path={}; env={},", commands, cwd, allEnv);
         PtyProcessBuilder builder = new PtyProcessBuilder(commands)
                 .setEnvironment(allEnv)
                 .setDirectory(cwd)
@@ -96,22 +99,33 @@ public class PtyChannel implements ShellChannel {
     public void disconnect(boolean waitForTermination) {
         if (ptyProcess.isAlive()) {
             ptyProcess.destroy();
+            try {
+                ptyProcess.waitFor(20, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                log.warn("Interrupted:{}", e.getMessage());
+            }
         }
+
         if (waitForTermination) {
             if (ptyProcess.isAlive()) {
                 try {
-                    ptyProcess.waitFor(10, TimeUnit.SECONDS);
+                    log.warn("Process still (pid={}) running, waiting for exit...", ptyProcess.pid());
+                    if (ui != null) {
+                        ui.showMessage("Process still running after SIGTERM. Waiting for exit...");
+                    }
+                    ptyProcess.waitFor(1, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
                     log.warn("Interrupted:{}", e.getMessage());
                 }
             }
             if (ptyProcess.isAlive()) {
-                log.error("Process still running. Forcing destroy.");
+                log.warn("Process still running. Forcing destroy.");
                 ptyProcess.destroyForcibly();
             } else {
                 log.debug("Processed stopped with exit value: {}", ptyProcess.exitValue());
             }
         }
+
     }
 
     @Override

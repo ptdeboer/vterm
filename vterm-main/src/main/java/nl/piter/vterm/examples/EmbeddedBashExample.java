@@ -33,9 +33,8 @@ public class EmbeddedBashExample {
         VTermPanel vtermPanel = new VTermPanel();
         frame.add(vtermPanel, BorderLayout.CENTER);
 
-        ControllerAdaptor controller = new ControllerAdaptor();
+        CustomControllerAdaptor controller = new CustomControllerAdaptor();
         vtermManager = new VTermSessionManager(controller, controller, new VTermChannelProvider(), vtermPanel);
-        vtermPanel.addComponentListener(new ResizeAdaptor(vtermManager));
 
         frame.pack();
         frame.setVisible(true);

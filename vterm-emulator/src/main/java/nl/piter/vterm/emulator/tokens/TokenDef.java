@@ -9,6 +9,7 @@ package nl.piter.vterm.emulator.tokens;
 
 import lombok.ToString;
 import nl.piter.vterm.emulator.Tokens;
+import nl.piter.vterm.emulator.Util;
 
 /**
  * Token definition, for single char and ESC Sequences.
@@ -17,48 +18,44 @@ import nl.piter.vterm.emulator.Tokens;
 @ToString
 public class TokenDef implements IToken {
 
-    public static IToken createFrom(char[] chars,
+    // factory
+    public static IToken createFrom(byte[] chars,
                                     Tokens.TokenOption option,
-                                    char[] terminatorChars,
+                                    byte[] terminatorChars,
                                     Tokens.Token token,
                                     String tokenDescription) {
-        // factory
         return new TokenDef(chars, option, terminatorChars, token, tokenDescription);
     }
 
     // --- //
 
-    protected final char[] chars;
+    protected final byte[] prefix;
     protected final Tokens.Token token;
     protected final Tokens.TokenOption option;
     protected final String tokenDescription;
-    protected final char[] terminatorChars;
+    protected final byte[] terminator;
     // cached:
-    private final char[] fullSequence;
+    private final byte[] fullSequence;
 
-    public TokenDef(char[] chars, Tokens.TokenOption tokenOption, char[] terminatorChars, Tokens.Token token, String tokenDescription) {
-        this.chars = chars;
+    public TokenDef(byte[] prefix, Tokens.TokenOption tokenOption, byte[] terminator, Tokens.Token token, String tokenDescription) {
+        this.prefix = prefix;
         this.token = token;
         this.option = tokenOption;
         this.tokenDescription = tokenDescription;
-        this.terminatorChars = terminatorChars;
+        this.terminator = terminator;
         //
-        if (terminatorChars == null) {
-            this.fullSequence = chars;
+        if (terminator == null) {
+            this.fullSequence = prefix;
         } else {
-            this.fullSequence = (new String(chars) + new String(terminatorChars)).toCharArray();
+            this.fullSequence = Util.concat(prefix, terminator);
         }
     }
 
-    public char[] chars() {
-        return chars;
+    public byte[] prefix() {
+        return this.prefix;
     }
 
-    public char[] prefix() {
-        return this.chars;
-    }
-
-    public char[] full() {
+    public byte[] full() {
         return this.fullSequence;
     }
 
@@ -71,8 +68,8 @@ public class TokenDef implements IToken {
     }
 
     @Override
-    public char[] terminator() {
-        return terminatorChars;
+    public byte[] terminator() {
+        return terminator;
     }
 
     @Override

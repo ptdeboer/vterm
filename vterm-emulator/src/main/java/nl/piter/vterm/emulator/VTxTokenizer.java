@@ -250,16 +250,12 @@ public class VTxTokenizer {
 
             boolean fullMatch;
             boolean prefixMatch = false;
-            boolean partialPrefixMatch = false;
-            boolean partialFullMatch = false;
 
             IToken itoken = this.tokenDefs.findFirst(patternBuffer.getBytes(), patternBuffer.index());
             if (itoken != null) {
                 fullMatch = itoken.full().length == patternBuffer.index();
                 if (!fullMatch) {
                     prefixMatch = (patternBuffer.index() == itoken.prefix().length);
-                    partialPrefixMatch = (patternBuffer.index() < itoken.prefix().length);
-                    partialFullMatch = (patternBuffer.index() > itoken.prefix().length) && (patternBuffer.index() < itoken.full().length);
                 }
             } else {
                 Token c0 = matchC0Token(c);
@@ -281,22 +277,15 @@ public class VTxTokenizer {
 
             if (log.isTraceEnabled()) {
                 log.trace("> pattern buffer  : {}", Util.prettyByteString(patternBuffer.getBytes()));
-                log.trace("> sequenceToken   : <{}>:'{}'", itoken.token(), Util.prettyByteString(itoken.getBytes()));
+                log.trace("> sequenceToken   : <{}>:'{}'", itoken.token(), Util.prettyByteString(itoken.bytes()));
                 log.trace("> - fullmatch     : '{}'", fullMatch);
                 log.trace("> - prefixMatch   : '{}'", prefixMatch);
-                log.trace("> - partialPrefix : '{}'", partialPrefixMatch);
-                log.trace("> - partialFull   : '{}'", partialFullMatch);
             }
 
-            // Need better state matcher!!!
-            if (partialPrefixMatch || partialFullMatch) {
+            // Could use optimized SearchTree
+            if ((!fullMatch) && (!prefixMatch)) {
                 // Still in 'partial' mode. No exact prefix nor full match.
                 continue;
-            }
-
-            if ((!fullMatch) && (!prefixMatch)) {
-                state.errorChar = c;
-                break;
             }
 
             // ---
@@ -348,10 +337,8 @@ public class VTxTokenizer {
                         getFormattedArguments());
                 tokenizer.state.matchedIToken = itoken;
                 return fullMatch(itoken.token());
-            }
-
-            // Loop
-            if (prefixMatch) {
+            } else if (prefixMatch) {
+                // loop
                 continue;
             }
 

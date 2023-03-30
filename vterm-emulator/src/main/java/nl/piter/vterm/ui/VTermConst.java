@@ -23,4 +23,5 @@ public class VTermConst {
     public static final String VTERM_SESSION_LAST_URI_SSH = "vterm.session.last.sshUri";
     public static final String VTERM_SESSION_LAST_SHELL_CMD = "vterm.session.last.shell.cmd";
     public static final String VTERM_SESSION_LAST_SHELL_ARGS = "vterm.session.last.shell.args";
+
 }

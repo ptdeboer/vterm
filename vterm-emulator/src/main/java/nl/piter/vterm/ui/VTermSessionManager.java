@@ -37,10 +37,7 @@ public class VTermSessionManager implements Runnable {
     public static final String SESSION_SHELLCHANNEL = "SHELLCHANNEL";
 
     // ---
-
-    private final String termType = TermConst.TERM_XTERM;
     private final VTermChannelProvider termProvider;
-//    private final VTermController termController;
 
     private final VTermPanel terminalPanel;
     private java.net.URI startURI = null;
@@ -59,6 +56,8 @@ public class VTermSessionManager implements Runnable {
         this.termProvider = termProvider;
         this.terminalPanel = terminalPanel;
         this.loadConfigSettings();
+        // setup listener:
+        terminalPanel.addComponentListener(new ResizeAdaptor(this));
     }
 
     /**
@@ -274,9 +273,8 @@ public class VTermSessionManager implements Runnable {
         TermChannelOptions options = termProvider.getChannelOptions(type);
         if ((autoCreate) && (options == null)) {
             options = TermChannelOptions.create();
-            addDefault(options, type);
         }
-
+        updateOptions(options, type);
         options.setDefaultSize(this.terminalPanel.getRowCount(), this.terminalPanel.getColumnCount());
         return options;
     }
@@ -285,14 +283,9 @@ public class VTermSessionManager implements Runnable {
         termProvider.setChannelOptions(type, options);
     }
 
-    private void addDefault(TermChannelOptions options, String type) {
-
-        // VTerm UI default options:
-        String value = this.properties.getProperty(VTermConst.VTERM_TERM_TYPE);
-        if (!isEmpty(value)) {
-            options.setTermType((String) this.properties.get(VTermConst.VTERM_TERM_TYPE));
-        }
-
+    private void updateOptions(TermChannelOptions options, String forYype) {
+        // Copy options from UI:
+        options.setTermType((String) this.properties.get(VTermConst.VTERM_TERM_TYPE));
     }
 
     public void setChannelOptions(String type, TermChannelOptions options) {
@@ -498,9 +491,11 @@ public class VTermSessionManager implements Runnable {
     }
 
     public void resizeTerminalToAWT() {
+        // First update terminal panel
         terminalPanel.resizeTerminalToAWTSize();
         int rows = terminalPanel.getRowCount();
         int cols = terminalPanel.getColumnCount();
+        // Then notify emulator + channel.
         sendTermSize(cols, rows, terminalPanel.getSize().width, terminalPanel.getSize().height);
     }
 

@@ -13,7 +13,7 @@ import nl.piter.vterm.api.TermUI;
 /**
  * Minimal UI and Controller adaptor.
  */
-public class ControllerAdaptor implements TermUI, EmulatorListener {
+public class CustomControllerAdaptor implements TermUI, EmulatorListener {
 
     @Override
     public void showMessage(String message) {

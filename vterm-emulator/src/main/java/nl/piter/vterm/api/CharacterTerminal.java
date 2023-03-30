@@ -14,12 +14,13 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * Interface to a Character Terminal.
+ * Cursor logic and movement is now done at emulator level.
  */
 public interface CharacterTerminal {
 
-    int getNumRows();
+    int numRows();
 
-    int getNumColumns();
+    int numColumns();
 
     /**
      * Set the nr of columns. This will initiate a resize.

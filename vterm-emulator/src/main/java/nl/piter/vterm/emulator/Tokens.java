@@ -64,7 +64,6 @@ public class Tokens {
         EPA_END_OF_GUARDER_AREA,
         DECID_SEND_TERM_ID,
         PM_PRIVACY_MESSAGE,
-        OSC_GRAPHMODE,
         REQ_PRIMARY_DA,
         RESPONSE_PRIMARY_DA,
         REQ_SECONDARY_DA,
@@ -72,9 +71,10 @@ public class Tokens {
         REQ_TERTIARY_DA,
         REQ_XTVERSION,
         DEVICE_STATUS,
-        // Font, Lines
-        SET_FONT_STYLE,
-        // Screen, Cursor, Lines
+        // Misc (used?)
+        STRING_END,
+        // Screen, Cursor, Lines, Character (font)
+        CHARACTER_ATTRS,
         SET_REGION,
         SET_CURSOR,
         SET_MODE,
@@ -90,9 +90,11 @@ public class Tokens {
         FORWARD_TABS,
         INSERT_LINES,
         SCROLL_UP,
+        SCROLL_DOWN,
         BACKWARD_TABS,
         SCROLL_DOWN_OR_MOUSETRACK,
         DELETE_LINES,
+        CHARACTER_REPEAT,
         // Actual Character
         CHAR,
         // movement tokens
@@ -107,8 +109,9 @@ public class Tokens {
         CHARSET_G1_DES,
         CHARSET_G2_DES,
         CHARSET_G3_DES,
+
         // ====================
-        // Dec Privates ?
+        // Dec modes
         // ======================
         DEC_SETMODE,
         DEC_RESETMODE,
@@ -118,13 +121,14 @@ public class Tokens {
         // ---
         CSI_PREFIX(false),
         OSC_GRAPHMODE_PREFIX(false),
+        OSC_GRAPHMODE,
         // todo:
         WINDOW_MANIPULATION,
-        CHARACTER_ATTRS,
         XTERM_RESET_MODIFIERS,
+        XTERM_GET_MODIFIERS,
         XTERM_SETGET_GRAPHICS,
         XTERM_WIN_MANIPULATION,
-        STRING_END,
+        // Legacy not applicable or defunct.
         PRIVACY_MESSAGE,
         APP_PROGRAM_CMD,
         DEC_LED_SET,

@@ -428,11 +428,11 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
         return charRenderer.getLineHeight() * numRows;
     }
 
-    public int getNumColumns() {
+    public int numColumns() {
         return numColumns;
     }
 
-    public int getNumRows() {
+    public int numRows() {
         return numRows;
     }
 
@@ -721,6 +721,7 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
 
     public void setColor(int num, Color c) {
         this.charRenderer.getColorMap().set(num, c);
+
         // repaint ALL
         this.renderTextBuffer(true);
     }
@@ -739,8 +740,6 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
             this.currentImage.flush();
             this.currentImage = null;
         }
-//        this.renderTask = null;
-//        this.renderThread = null;
 
         if (this.fullBuffer != null) {
             this.fullBuffer.dispose();
@@ -752,7 +751,6 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
         }
 
         this.currentBuffer = null;
-
     }
 
     public void stopRenderers() {
@@ -764,7 +762,7 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
     }
 
     public void setColumns(int columns) {
-        resizeTextBuffers(columns, getNumRows(), false, false);
+        resizeTextBuffers(columns, numRows(), false, false);
     }
 
 

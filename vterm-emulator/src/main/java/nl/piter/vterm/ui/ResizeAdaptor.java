@@ -5,13 +5,14 @@
  *     See LICENSE.txt for details.
  */
 //---
-package nl.piter.vterm.examples;
-
-import nl.piter.vterm.ui.VTermSessionManager;
+package nl.piter.vterm.ui;
 
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 
+/**
+ * Catch CharPane resize events and make sure resizing is done synchronous.
+ */
 public class ResizeAdaptor implements ComponentListener {
 
     private final VTermSessionManager manager;

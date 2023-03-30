@@ -34,13 +34,13 @@ public class EmbeddedSshExample {
         VTermPanel vtermPanel = new VTermPanel();
         frame.add(vtermPanel, BorderLayout.CENTER);
 
-        // wire controllers:
-        ControllerAdaptor controller = new ControllerAdaptor();
+        // configure SSH
         VTermChannelProvider provider = new VTermChannelProvider();
         provider.registerChannelFactory("SSH", new SshChannelFactory());
 
+        // wire controllers:
+        CustomControllerAdaptor controller = new CustomControllerAdaptor();
         vtermManager = new VTermSessionManager(controller, controller, provider, vtermPanel);
-        vtermPanel.addComponentListener(new ResizeAdaptor(vtermManager));
 
         frame.pack();
         frame.setVisible(true);

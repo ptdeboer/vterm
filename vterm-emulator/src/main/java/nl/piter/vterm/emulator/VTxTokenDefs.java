@@ -9,9 +9,11 @@ package nl.piter.vterm.emulator;
 
 import lombok.extern.slf4j.Slf4j;
 import nl.piter.vterm.emulator.tokens.IToken;
+import nl.piter.vterm.emulator.tokens.SearchTree;
 import nl.piter.vterm.emulator.tokens.TokenDef;
 import nl.piter.vterm.exceptions.VTxInvalidConfigurationException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -100,14 +102,9 @@ public class VTxTokenDefs {
             {CTRL_ESC + " M", UNSUPPORTED, "Set ANSI conformance level 2 - vt200"},
             {CTRL_ESC + " N", UNSUPPORTED, "Set ANSI conformance level 3 - vt300"},
             // DEC
-            {CTRL_ESC + "#3", UNSUPPORTED, "DEC double height, top half"},
-            {CTRL_ESC + "#4", UNSUPPORTED, "DEC double height, bottom half"},
-            {CTRL_ESC + "#5", UNSUPPORTED, "DEC single width line"},
-            {CTRL_ESC + "#6", UNSUPPORTED, "DEC double width line"},
             {CTRL_ESC + "#8", DEC_SCREEN_ALIGNMENT}, // "DEC Screen aligment Test"},
             // ----------------------------------------------------------------
-            // CSI Escape Sequence: "^[[" (<ESC>-[)
-            // OSC GraphMode Sequence: "^[]" (<ESC>-])
+            // APP, DCS, OSC (graphmode) adn CSI Sequences.
             // Optimization: Prefix must be first Escape + '[' token in token list so that the prefix
             // token is matched first.
             // The PREFIX token triggers the parseOptions() in nextToken() if 2d value is an OPTION.
@@ -122,36 +119,31 @@ public class VTxTokenDefs {
             // ----------------------------------------------------------------
             // CSI Sequences: <ESC>-[
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, (char) -1, CSI_PREFIX, "Start of CSI Prefix"},
-            // DEC_PRIVATE terminators: 3 char prefix, must be after 2 char CSI prefix!
+            // 3 char CSIs:
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'h', DEC_SETMODE},
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'l', DEC_RESETMODE},
-            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'm', CHARACTER_ATTRS},
-            // no 3rd char here:
-            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'c', REQ_PRIMARY_DA},
-            // Devices
+            // Devices/XTerm
             {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'c', REQ_SECONDARY_DA},
             {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'q', REQ_XTVERSION},
             {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 'c', REQ_TERTIARY_DA},
-            // XTERM
             {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'm', XTERM_RESET_MODIFIERS},
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'm', XTERM_GET_MODIFIERS},
             // ----------------------------------------------------------------
-            // beta
+            // Beta
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'S', XTERM_SETGET_GRAPHICS, "XTSMGRAPHICS"},
-            // Huh
+            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'S', UNSUPPORTED},
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, "$p", UNSUPPORTED, "Request DEC private mode (DECRQM)"},
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'u', UNSUPPORTED},
-            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'r', UNSUPPORTED},
-            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 's', UNSUPPORTED},
             {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 'u', UNSUPPORTED},
-            {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 'r', UNSUPPORTED},
-            {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 's', UNSUPPORTED},
-            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'S', UNSUPPORTED},
             {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'u', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'r', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 'r', UNSUPPORTED},
             {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'r', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 's', UNSUPPORTED},
+            {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 's', UNSUPPORTED},
             {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 's', UNSUPPORTED},
-            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, "%m", UNSUPPORTED, "VI '0%m' GREMLIN"},
             // ----------------------------------------------------------------
-            // CSI TERMINATORS
+            // 2 char CSIs:
             // Cursors: VT100 and/or XTerm:
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, '@', INSERT_BLANK_CHARS},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'A', UP},
@@ -173,12 +165,18 @@ public class VTxTokenDefs {
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'T', SCROLL_DOWN_OR_MOUSETRACK},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'X', ERASE_CHARS},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'Z', BACKWARD_TABS},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, '^', SCROLL_DOWN},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, '`', UNSUPPORTED},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'a', UNSUPPORTED},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'b', CHARACTER_REPEAT},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'c', REQ_PRIMARY_DA},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'd', SET_ROW},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'f', SET_CURSOR},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'g', HTC_TAB_CLEAR},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'h', SET_MODE},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'i', UNSUPPORTED,"Media Copy"},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'l', RESET_MODE},
-            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'm', SET_FONT_STYLE},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'm', CHARACTER_ATTRS},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'n', DEVICE_STATUS},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'r', SET_REGION, "DECSTBM – Set Top and Bottom Margin"},
             // Misc
@@ -186,30 +184,31 @@ public class VTxTokenDefs {
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'q', DEC_LED_SET, "DEC_LED_SET"},
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, 'y', DEC_LED_TEST, "DEC_LED_TEST"},
             // Bug Filters
-            {CTRL_OSC_PREFIX + CTRL_ESC + "(", PARAMETER_CHARSET, null, CHARSET_G0_DES, "YaST Graphics bug"},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, "%m", UNSUPPORTED, "VI '%m' unknown"},
+            {CTRL_OSC_PREFIX + CTRL_ESC + "(", PARAMETER_CHARSET, null, CHARSET_G0_DES, "YaST ncurses unknown"},
             {} // NILL
     };
 
     // === INSTANCE === //
 
     protected List<IToken> tokenPatterns = new ArrayList();
+    protected SearchTree<IToken> searchTree=new SearchTree();
 
     public VTxTokenDefs() {
         compile();
     }
 
-    // 'compile' he says.
+    // 'compile' = create SearchTree
     private void compile() {
         for (int i = 0; i < tokenDefs.length; i++) {
             addPattern(tokenDefs[i]);
         }
-
     }
 
     private void addPattern(Object[] def) {
 
         TokenOption option = null;
-        char[] terminatorChars = null;
+        byte[] terminatorChars = null;
         if ((def == null) || (def.length == 0)) {
             return;
         }
@@ -219,16 +218,17 @@ public class VTxTokenDefs {
         String tokenDescription = lastObj.toString();
 
         Token token;
-        char[] chars;
+        byte[] chars;
+
 
         if (def.length == 2) {
             // CHAR, TOKEN
-            chars = def[0].toString().toCharArray();
+            chars = getStringBytes(def[0]);
             token = (Token) def[1];
         } else if (def.length == 3) {
             // PREFIX, TOKEN, DESCRIPTION
             // PREFIX, OPTION, TOKEN
-            chars = def[0].toString().toCharArray();
+            chars = getStringBytes(def[0]);
             if (def[1] instanceof TokenOption) {
                 option = (TokenOption) def[1];
                 token = (Token) def[2];
@@ -241,10 +241,10 @@ public class VTxTokenDefs {
             }
         } else if ((def.length >= 4)) {
             // PREFIX, OPTION, TERMINATOR, TOKEN [, DESCRIPTION ]
-            chars = def[0].toString().toCharArray();
+            chars = getStringBytes(def[0]);
             option = (TokenOption) def[1];
             if (def[2] != null) {
-                terminatorChars = def[2].toString().toCharArray();
+                terminatorChars = getStringBytes(def[2]);
             } else {
                 terminatorChars = null; // prefix token.
             }
@@ -261,36 +261,11 @@ public class VTxTokenDefs {
 
         IToken tokenDef = TokenDef.createFrom(chars, option, terminatorChars, token, tokenDescription);
         tokenPatterns.add(tokenDef);
+        searchTree.add(tokenDef);
     }
 
-    public boolean matchFully(char[] sequence, byte[] pattern, int index) {
-        if (sequence == null) {
-            return false;
-        }
-
-        // Length must match:
-        if (index != sequence.length)
-            return false;
-
-        for (int i = 0; i < index; i++) {
-            if (sequence[i] != pattern[i]) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    public boolean matchPartial(char[] sequence, byte[] pattern, int index) {
-        if ((sequence == null) || index > sequence.length) {
-            return false;
-        }
-
-        for (int i = 0; i < index; i++)
-            if (sequence[i] != pattern[i])
-                return false;
-
-        return true;
+    private byte[] getStringBytes(Object obj) {
+        return obj.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     public static Object[] findCharToken(char c) {
@@ -323,35 +298,13 @@ public class VTxTokenDefs {
      */
     public IToken findFirst(byte[] pattern, int patternIndex) {
 
-        int index = 0;
-        List<IToken> partials = new ArrayList<>();
-
-        do {
-            IToken tokenDef = tokenPatterns.get(index);
-
-            // I) Shortcut: Full match will work for both: Token + option (and options parsed) and Token + NO option:
-            if (matchFully(tokenDef.full(), pattern, patternIndex)) {
-                return tokenDef;
-            }
-
-            // II) Match against FULL or PREFIX Token with OPTION
-            if (tokenDef.hasOption()) {
-                if (matchFully(tokenDef.prefix(), pattern, patternIndex)) {
-                    return tokenDef;
-                }
-            }
-            // III) Partial match against Full or Prefix Token:
-            if (matchPartial(tokenDef.full(), pattern, patternIndex)) {
-                partials.add(tokenDef);
-            }
-
-            index++;
-        } while (index < tokenPatterns.size());
-
-        // Optionally sort for priority here:
-        if (partials.size() > 0) {
-            return partials.get(0);
+        // Partial state matching now functional?
+        // IToken fullMatch = searchTree.findFull(pattern, patternIndex);
+        IToken prefix = searchTree.findPartial(pattern, patternIndex);
+        if(prefix!=null) {
+            return prefix;
         }
+
         return null;
     }
 }

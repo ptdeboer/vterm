@@ -67,12 +67,12 @@ public class VTerm {
 
             vtermJFrame.updateFrameSize();
             if (shellChan != null) {
-                vtermJFrame.startShellChannel(shellChan, true);
+                vtermJFrame.controller().startShellChannel(shellChan, true);
             }
 
             if (optionalLocation != null) {
                 try {
-                    vtermJFrame.openLocation(optionalLocation);
+                    vtermJFrame.controller().openLocation(optionalLocation);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

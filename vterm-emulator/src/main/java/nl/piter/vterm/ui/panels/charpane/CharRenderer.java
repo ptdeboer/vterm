@@ -148,7 +148,7 @@ public class CharRenderer {
             alpha = 128;
         // Hidden => fixed alpha of 25%;
         if ((style & StyleChar.STYLE_HIDDEN) > 0)
-            alpha = 64;
+            alpha = 8;
 
         // alpha=-1 don't care/inherit from foreground
         // alpha=255 is opaque which means also inherit from foreground !

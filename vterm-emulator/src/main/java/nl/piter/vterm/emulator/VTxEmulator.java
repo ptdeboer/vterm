@@ -42,6 +42,8 @@ public class VTxEmulator implements Emulator {
         protected boolean originMode;
         protected boolean bracketedPasteMode;
         protected boolean focusEvents;
+        protected boolean applicationCursorKeys;
+        protected boolean slowScroll;
 
         public void reset() {
             // todo: set default on, but actually this is configurable: (see: termcap).
@@ -50,6 +52,8 @@ public class VTxEmulator implements Emulator {
             originMode = false;
             bracketedPasteMode = false;
             focusEvents = true;
+            applicationCursorKeys =false;
+            slowScroll = false;
         }
     }
 
@@ -59,24 +63,20 @@ public class VTxEmulator implements Emulator {
         protected boolean hasRegion;
         protected int region_y1 = 0; // 1;
         protected int region_y2 = 0; //term_height;
-
         // tabs
         protected int tabSize = 8;
         // Cursors
-        protected boolean applicationCursorKeys;
         protected int savedCursorX;
         protected int savedCursorY;
         protected boolean savedLfc;
         protected int savedStyle;
         protected int savedCharSet;
         protected String savedCharSetName;
-        protected boolean slowScroll;
         protected DecMode decMode = new DecMode();
-
+        protected byte[] lastChar; // for character repeat;
         public void reset() {
             hasRegion = false;
             tabSize = 8;
-            slowScroll = false;
             decMode.reset();
         }
     }
@@ -216,11 +216,11 @@ public class VTxEmulator implements Emulator {
     }
 
     public int numRows() {
-        return term.getNumRows();
+        return term.numRows();
     }
 
     public int numColumns() {
-        return term.getNumColumns();
+        return term.numColumns();
     }
 
     @Override
@@ -280,6 +280,7 @@ public class VTxEmulator implements Emulator {
 
         int arg1 = 0;
         int arg2 = 0;
+        int num;
 
         int numIntegers = tokenizer.args().numArgs();
 
@@ -316,6 +317,7 @@ public class VTxEmulator implements Emulator {
                 break;
             case CHAR:
                 // one or more characters: moves cursor !
+                state.lastChar=bytes.clone();
                 writeChar(bytes);
                 break;
             case HT: { // HORIZONTAL TAB
@@ -354,6 +356,11 @@ public class VTxEmulator implements Emulator {
                 log.debug("FF: New Cursor (x,y)=[{},{}]", x, y);
                 break;
             }
+            case SCROLL_DOWN:
+            case SCROLL_UP:
+                boolean up=(token==Token.SCROLL_UP);
+                this.scrollLines(arg1,up);
+                break;
             case CR: // carriage return
                 x = 0;
                 setCursor(x, y);
@@ -401,23 +408,21 @@ public class VTxEmulator implements Emulator {
             }
             case DEL_CHAR: {
                 // delete char under cursor, shift characters right of cursor to the left !
-                int num = 1;
-                if (numIntegers > 0)
-                    num = arg1;
+                num = (arg1>0)?arg1:1;
                 // multi delete is move chars to left
                 term.move(x + num, y, numColumns() - x - num, 1, x, y);
                 break;
             }
             case ERASE_CHARS: {
-                int n = arg1;
-                for (int i = 0; i < n; i++)
+                num = (arg1>0)?arg1:1;
+                for (int i = 0; i < num; i++)
                     term.putChar(' ', x + i, y);
                 setCursor(x, y);
                 break;
             }
             case DELETE_LINES: {
-                int n = arg1;
-                for (int i = 0; i < n; i++)
+                num = (arg1>0)?arg1:1;
+                for (int i = 0; i < num; i++)
                     for (int j = 0; j < numColumns() - 1; j++)
                         term.putChar(' ', j, y + i);
                 setCursor(x, y);
@@ -463,13 +468,10 @@ public class VTxEmulator implements Emulator {
             }
             case INSERT_LINES: {
                 //default: one
-                int numlines = 1;
-                if (arg1 > 0) {
-                    numlines = arg1 + 1;
-                }
+                int numLines=(arg1>0)?arg1:1;
                 // insert at current position: scroll down:
                 int maxy = this.getRegionMaxY();
-                scrollRegion(y, maxy, numlines, false);
+                scrollRegion(y, maxy, numLines, false);
                 break;
             }
             case SET_CURSOR: {
@@ -531,17 +533,21 @@ public class VTxEmulator implements Emulator {
                 break;
             }
             case INSERT_BLANK_CHARS:
-                int num = 1;
-                if (arg1 > 0) {
-                    num = arg1;
-                }
+                num = (arg1>0)?arg1:1;
                 // insert and move text from cursor to the right:
                 for (int i = 0; i < num; i++) {
                     term.move(x, y, numColumns() - x, 1, x + 1, y);
                     term.putChar(' ', x, y);
                 }
                 break;
-            case SET_FONT_STYLE:
+            case CHARACTER_REPEAT: {
+                num = (arg1>0)?arg1:1;
+                for (int i=0;i<num;i++) {
+                    writeChar(state.lastChar);
+                }
+                break;
+            }
+            case CHARACTER_ATTRS:
                 handleSetFontStyle(term, tokenizer.args().intArgs());
                 break;
             case DEC_SETMODE:
@@ -613,6 +619,12 @@ public class VTxEmulator implements Emulator {
             case XTERM_SETGET_GRAPHICS:
                 handleXtermSetGetGraphics(tokenizer.args().intArgs());
                 break;
+            // unsupported, misc:
+            case ETX:
+            case ENQ:
+            case DC1:
+            case DC2:
+            case UNSUPPORTED:
             case ERROR: {
                 String seqstr = Util.prettyByteString(bytes);
                 // vt100 specifies to write checkerboard char:
@@ -620,12 +632,6 @@ public class VTxEmulator implements Emulator {
                 log.debug("Fixme:Token error:{},{},sequence={}", token, tokenizer.getText(), seqstr);
                 break;
             }
-            // unsupported, misc:
-            case ETX:
-            case ENQ:
-            case DC1:
-            case DC2:
-            case UNSUPPORTED:
             default: {
                 String seqstr = Util.prettyByteString(bytes);
                 // vt100 specifies to write checkerboard char:
@@ -684,8 +690,8 @@ public class VTxEmulator implements Emulator {
         if (intArgs.length == 0)
             return;
 
-        int rows = term.getNumRows();
-        int cols = term.getNumColumns();
+        int rows = term.numRows();
+        int cols = term.numColumns();
 
         int cmd = intArgs[0];
         switch (cmd) {
@@ -722,16 +728,18 @@ public class VTxEmulator implements Emulator {
 
     private void handleGraphMode(int type, String strArg) {
         log.debug("OSC_GRAPHMODE: '{}';'{}'", type, strArg);
-        if (type == 4) {
-            log.debug("GraphMode color set/request: '{}'", strArg);
-            setXtermColor(strArg);
-        }
-        if (type == 1 || type == 2) {
+        if (type ==0  || type == 1 || type == 2) {
             this.fireGraphModeEvent(type, tokenizer.args().strArg());
+        }
+        else if (type == 4 || type ==5) {
+            log.debug("GraphMode color set/request: '{}'", strArg);
+            setXtermColor(strArg,(type==5));
+        } else {
+            log.warn("Unsupported GraphMode:{}:{}", type, strArg);
         }
     }
 
-    private void setXtermColor(String strArg) {
+    private void setXtermColor(String strArg, boolean special) {
         log.debug("setXtermColor: {}", strArg);
 
         String[] pars = strArg.split(";");
@@ -739,9 +747,11 @@ public class VTxEmulator implements Emulator {
             log.warn("Not enough arguments: '{}'", strArg);
             return;
         }
-        try {
-            int num = Integer.parseInt(pars[0]);
-            String option = pars[1];
+
+        for (int i=0;i<pars.length;i+=2)
+          try {
+            int num = Integer.parseInt(pars[i]);
+            String option = pars[i+1];
             if ("?".equals(option)) {
                 sendXtermColor(num, term.getColor(num));
             } else if (option.startsWith("rgb:")) {
@@ -757,11 +767,11 @@ public class VTxEmulator implements Emulator {
                 log.info("Setting new color: #{}:({},{},{})", num, r, g, b);
                 this.term.setColor(num, new Color(r, g, b));
             } else {
-                log.debug("Unknown graphmode option in argument: '{}'", strArg);
+                log.warn("Unknown graphmode option in argument: '{}'", strArg);
             }
-        } catch (NumberFormatException e) {
+          } catch (NumberFormatException e) {
             log.error("Failed to parse Color argument:" + strArg, e);
-        }
+          }
     }
 
     /**
@@ -844,8 +854,8 @@ public class VTxEmulator implements Emulator {
 
         int xpos = term.getCursorX();
         int ypos = term.getCursorY();
-        int numRs = term.getNumRows();
-        int numCs = term.getNumColumns();
+        int numRs = term.numRows();
+        int numCs = term.numColumns();
         int oldx = xpos;
         int oldy = ypos;
 
@@ -894,13 +904,13 @@ public class VTxEmulator implements Emulator {
     }
 
     private void setSlowScroll(boolean value) {
-        this.state.slowScroll = value;
+        this.state.decMode.slowScroll = value;
     }
 
     private void scrollRegion(int y1, int y2, int numLines, boolean up) {
         long start = System.currentTimeMillis();
         term.scrollRegion(y1, y2, numLines, up);
-        if (state.slowScroll) {
+        if (state.decMode.slowScroll) {
             long end = System.currentTimeMillis();
             long delta = end - start;
             if (delta < 100) {
@@ -962,7 +972,7 @@ public class VTxEmulator implements Emulator {
                         int r = safeNext(iterator, -1); //#2
                         int g = safeNext(iterator, -1); //#3
                         int b = safeNext(iterator, -1); //#4
-                        log.debug("RGB subMode: RGB: {},{},{}", r, g, b);
+                        log.error("RGB subMode: RGB: {},{},{}", r, g, b);
                         if (isFG) {
                             charTerm.setDrawForeground(r, g, b);
                         } else {
@@ -1022,7 +1032,7 @@ public class VTxEmulator implements Emulator {
 
             switch (mode) {
                 case 1:
-                    this.state.applicationCursorKeys = value;
+                    this.state.decMode.applicationCursorKeys = value;
                     break;
                 case 3: {
                     charTerm.setColumns(value ? 132 : 80);
@@ -1091,6 +1101,7 @@ public class VTxEmulator implements Emulator {
                     break;
                 }
                 case 2004:
+                    // vi feature(!):
                     state.decMode.bracketedPasteMode = value;
                     break;
                 default:
@@ -1101,7 +1112,7 @@ public class VTxEmulator implements Emulator {
     }
 
     private void setUseApplicationKeys(boolean value) {
-        this.state.applicationCursorKeys = value;
+        this.state.decMode.applicationCursorKeys = value;
     }
 
 
@@ -1148,7 +1159,7 @@ public class VTxEmulator implements Emulator {
         int oldy = term.getCursorY();
         boolean oldLcf = this.state.decMode.lcf;
 
-        if (term.getCursorX() == term.getNumColumns() - 1) {
+        if (term.getCursorX() == term.numColumns() - 1) {
             if (this.state.decMode.modeAutoWrap) {
                 if (!this.state.decMode.lcf) {
                     term.writeChar(bytes);
@@ -1172,7 +1183,7 @@ public class VTxEmulator implements Emulator {
 
     public byte[] getKeyCode(String keystr) {
         String prefix;
-        if (this.state.applicationCursorKeys) {
+        if (this.state.decMode.applicationCursorKeys) {
             prefix = "APP";
         } else {
             prefix = termType;
@@ -1330,12 +1341,12 @@ public class VTxEmulator implements Emulator {
 
     @Override
     public void setSlowScrolling(boolean val) {
-        this.state.slowScroll = val;
+        this.state.decMode.slowScroll = val;
     }
 
     @Override
     public boolean getSlowScrolling() {
-        return this.state.slowScroll;
+        return this.state.decMode.slowScroll;
     }
 
     protected void fireGraphModeEvent(int type, String text) {

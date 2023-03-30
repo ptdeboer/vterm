@@ -7,32 +7,26 @@
 //---
 package nl.piter.vterm.emulator.tokens;
 
+import nl.piter.vterm.api.ByteArray;
 import nl.piter.vterm.emulator.Tokens;
 
-import java.nio.charset.StandardCharsets;
-
-public interface IToken {
-
-    /**
-     * Single char or char sequence from Terminator or Prefix Sequence.
-     */
-    char[] chars();
+public interface IToken extends ByteArray {
 
     /**
      * Prefix part BEFORE options part.
      */
-    char[] prefix();
+    byte[] prefix();
 
     /**
      * Full sequence: Prefix + Terminator Char.
      */
-    char[] full();
+    byte[] full();
 
     Tokens.Token token();
 
     Tokens.TokenOption option();
 
-    char[] terminator();
+    byte[] terminator();
 
     String description();
 
@@ -41,12 +35,16 @@ public interface IToken {
         return (option() != null);
     }
 
-    default boolean hasPostFix() {
+    default boolean hasTerminator() {
         return (terminator() != null);
     }
 
-    default byte[] getBytes() {
-        return new String(chars()).getBytes(StandardCharsets.UTF_8);
+    // -- ByteArray
+    default int length() {
+        return full().length;
     }
 
+    default byte[] bytes() {
+        return full();
+    }
 }

@@ -18,6 +18,6 @@ public class PtyChannelFactory implements ShellChannelFactory {
 
     @Override
     public ShellChannel createChannel(URI uri, String username, char[] password, TermChannelOptions options, TermUI ui) {
-        return new PtyChannel(uri.getPath(), options);
+        return new PtyChannel(uri.getPath(), options, ui);
     }
 }

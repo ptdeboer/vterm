@@ -193,7 +193,7 @@ public class Util {
      * Match various combinations of quoted and unquoted patterns.
      * Pattern keeps quotes for example if they are needed as shell arguments.
      */
-    public static final Pattern spacesWithQuotes = Pattern.compile(
+    public static final Pattern spacesWithQuotesRE = Pattern.compile(
             "(([^\"\\s]+)|(\"[^\"]*\"))+"
     );
 
@@ -206,9 +206,10 @@ public class Util {
      * For example:
      *  <em>Split: '-i -script="long path to file' => '-i','-script="long path to file"'.
      * </pre>
+     * For 'bash' it is important that quoted argument are kept in quotes.
      */
     public static List<String> splitQuotedArgs(String source) {
-        Matcher matcher = spacesWithQuotes.matcher(source);
+        Matcher matcher = spacesWithQuotesRE.matcher(source);
         List<String> args = new ArrayList();
 
         while (matcher.find()) {
@@ -218,5 +219,11 @@ public class Util {
         return args;
     }
 
+    public static byte[] concat(byte[] arr1, byte[] arr2) {
+        byte[] result=new byte[arr1.length+arr2.length];
+        System.arraycopy(arr1,0,result,0,arr1.length);
+        System.arraycopy(arr2,0,result,arr1.length,arr2.length);
+        return result;
+    }
 
 }

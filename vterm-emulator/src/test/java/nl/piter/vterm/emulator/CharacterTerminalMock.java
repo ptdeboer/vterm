@@ -43,12 +43,12 @@ public class CharacterTerminalMock implements CharacterTerminal {
     }
 
     @Override
-    public int getNumRows() {
+    public int numRows() {
         return rows;
     }
 
     @Override
-    public int getNumColumns() {
+    public int numColumns() {
         return columns;
     }
 
