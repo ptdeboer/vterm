@@ -39,7 +39,7 @@ public class KeyMappings {
             {"PAGE_UP", VTxCharDefs.CTRL_ESC + "[5~"},  //
             {"PAGE_DOWN", VTxCharDefs.CTRL_ESC + "[6~"},//
             {"ENTER", VTxCharDefs.CTRL_CR + ""},        //
-            {"BACKSPACE", VTxCharDefs.CTRL_BS + "",},  //
+            {"BACKSPACE", VTxCharDefs.CTRL_DEL + "",},  //
             {"TAB", VTxCharDefs.CTRL_HT + ""},
             {"UP", VTxCharDefs.CTRL_ESC + "[A"},   //
             {"DOWN", VTxCharDefs.CTRL_ESC + "[B"}, //
@@ -55,6 +55,7 @@ public class KeyMappings {
             {"XTERM_" + DOWN, VTxCharDefs.CTRL_ESC + "[B"}, //
             {"XTERM_" + RIGHT, VTxCharDefs.CTRL_ESC + "[C"},//
             {"XTERM_" + LEFT, VTxCharDefs.CTRL_ESC + "[D"}, //
+            {"XTERM_BACKSPACE", VTxCharDefs.CTRL_DEL + "",},  //
             {"XTERM_F1", VTxCharDefs.CTRL_ESC + "OP"}, //
             {"XTERM_F2", VTxCharDefs.CTRL_ESC + "OQ"}, //
             {"XTERM_F3", VTxCharDefs.CTRL_ESC + "OR"}, //
@@ -71,6 +72,7 @@ public class KeyMappings {
             {"VT100_" + DOWN, VTxCharDefs.CTRL_ESC + "OB"}, //
             {"VT100_" + RIGHT, VTxCharDefs.CTRL_ESC + "OC"},//
             {"VT100_" + LEFT, VTxCharDefs.CTRL_ESC + "OD"}, //
+            {"VT100_BACKSPACE", VTxCharDefs.CTRL_BS + "",},  //
             {"VT52_" + UP, VTxCharDefs.CTRL_ESC + "A"},     //
             {"VT52_" + DOWN, VTxCharDefs.CTRL_ESC + "B"},   //
             {"VT52_" + RIGHT, VTxCharDefs.CTRL_ESC + "C"},  //

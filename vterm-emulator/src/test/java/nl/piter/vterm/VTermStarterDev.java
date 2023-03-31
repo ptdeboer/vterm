@@ -30,26 +30,11 @@ public class VTermStarterDev {
     public static void main(String[] args) {
 
         String cwd = System.getProperty("user.dir");
-        log.info("Starting [dev] from:{}", cwd);
-
-        try {
-            // permission fix for classpath resource (copied by build)
-            setExePermissions("ptty.lxe");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        log.info("VTermStarterDev: starting from cwd:'{}'", cwd);
 
         VTermChannelProvider provider = new VTermChannelProvider();
         new VTerm().withVTermChannelProvider(provider)
                 .start(args);
-
-    }
-
-    private static void setExePermissions(String resource) throws URISyntaxException, IOException {
-        URL fileUrl = Thread.currentThread().getContextClassLoader().getResource(resource);
-        if (fileUrl == null) throw new FileNotFoundException("can not find:" + resource);
-        Path path = Paths.get(fileUrl.toURI());
-        Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rwxr-xr-x"));
     }
 
 }

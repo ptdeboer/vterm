@@ -51,12 +51,14 @@ public class VTxCharDefs {
     final public static char CTRL_SO = 0x0e; // CTRL-N: G1 character set
     final public static char CTRL_SI = 0x0f; // CTRL-O: G0 character set
     final public static char CTRL_DLE = 0x10;
-    final public static char CTRL_XON = 0x11; // CTRL-Q: XON (only XON/XOFF are allowed)
-    final public static char CTRL_XOFF = 0x13;// CTRL-S: XOFF (turn off XON/XOFF mode)
+    final public static char CTRL_XON = 0x11; // DC1: CTRL-Q: XON (only XON/XOFF are allowed)
+    final public static char CTRL_DC2 = 0x12; // DC2
+    final public static char CTRL_XOFF = 0x13;// DC3: CTRL-S: XOFF (turn off XON/XOFF mode)
+    final public static char CTRL_DC4 = 0x14; // DC4:
     final public static char CTRL_CAN = 0x18; // Abort CTRL sequence, output ERROR Char
     final public static char CTRL_SUB = 0x1a; // Same as CAN
     final public static char CTRL_ESC = 0x1b; // New Escape Sequence  (aborts previous)
-    final public static char CTRL_DEL = 0x7f; // Ignored
+    final public static char CTRL_DEL = 0x7f; // Alternate BS: plot 7 holes in punchcard (01111111)
     // 8 bit characters:
     final public static char IND_8bit = 0x84; // Index (ESC D)
     final public static char NEL_8bit = 0x85; // Next Line  = ESC E

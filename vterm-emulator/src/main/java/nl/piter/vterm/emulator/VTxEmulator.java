@@ -297,6 +297,9 @@ public class VTxEmulator implements Emulator {
         log.debug("nextToken #{} {}:'{}' with args:{}", tokenCounter, token, tokenizer.getText(), tokenizer.getFormattedArguments());
 
         switch (token) {
+            case NUL:
+                //ignore
+                break;
             case EOF:
                 log.warn("EOF: Connection Closed.");
                 signalTerminate = true;
@@ -304,10 +307,6 @@ public class VTxEmulator implements Emulator {
             case EOT:
                 log.warn("EOT: Connection Closed.");
                 signalTerminate = true;
-                break;
-            case NUL:
-            case DEL:
-                //ignore
                 break;
             case DECID_SEND_TERM_ID:
                 this.sendPrimaryDA();
@@ -329,7 +328,8 @@ public class VTxEmulator implements Emulator {
                 setCursor(x, y);
                 break;
             }
-            case BS: { // backspace
+            case DEL:
+            case BS: { // backspace, DEL is also used.
                 x -= 1;
                 if (x < 0) {
                     y -= 1;
