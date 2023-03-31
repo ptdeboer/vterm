@@ -311,7 +311,7 @@ public class VTermFrame extends JFrame {
 
                     // selection of MONO spaced fonts; 
                     String[] types = {"Monospaced", "Courier", "Courier New", "Courier 10 Pitch",
-                            "Luxi Mono", "Liberation Mono", "DejaVu Sans Mono", "Bera Sans Mono"};
+                            "Luxi Mono", "Liberation Mono", "DejaVu Sans Mono", "Bera Sans Mono"};//"TXMIA"};
 
                     for (String s : types) {
                         mitem = new JMenuItem(s);

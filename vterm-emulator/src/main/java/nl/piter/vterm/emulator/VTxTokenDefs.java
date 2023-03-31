@@ -121,14 +121,13 @@ public class VTxTokenDefs {
             // CSI Sequences: <ESC>-[
             {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, (char)-1, CSI_PREFIX, "Start of CSI Prefix"},
             // 3 char CSIs:
+            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'c', REQ_SECONDARY_DA},
+            {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 'c', REQ_TERTIARY_DA},
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'h', DEC_SETMODE},
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'l', DEC_RESETMODE},
-            // Devices/XTerm
-            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'c', REQ_SECONDARY_DA},
-            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'q', REQ_XTVERSION},
-            {CTRL_CSI_PREFIX + "=", PARAMETER_INTEGERS, 'c', REQ_TERTIARY_DA},
             {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'm', XTERM_RESET_MODIFIERS},
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'm', XTERM_GET_MODIFIERS},
+            {CTRL_CSI_PREFIX + ">", PARAMETER_INTEGERS, 'q', REQ_XTVERSION},
             // ----------------------------------------------------------------
             // Beta
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'S', XTERM_SETGET_GRAPHICS, "XTSMGRAPHICS"},

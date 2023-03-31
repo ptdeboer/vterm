@@ -7,13 +7,18 @@
 //---
 package nl.piter.vterm.ui.fonts;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.RenderingHints.Key;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Properties;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.*;
 
 import static nl.piter.vterm.ui.fonts.FontConst.*;
 
@@ -21,6 +26,8 @@ import static nl.piter.vterm.ui.fonts.FontConst.*;
  * Simple Font Information holder class. FontInfo is used by the FontToolbar.<br>
  * Use createFont() to instantiate a new Font object using the specified Font information.
  */
+@ToString
+@Slf4j
 public class FontInfo {
 
     // Static registry (auto init).
@@ -55,8 +62,13 @@ public class FontInfo {
             Font font = new Font("monospaced", 0, 16);
             return store(font, FONT_MONO_SPACED);
         } else if (alias.compareToIgnoreCase(FONT_TERMINAL) == 0) {
-            Font font = new Font("monospaced", 0, 16);
-            FontInfo newInfo = store(font, FONT_MONO_SPACED);
+            Font font = new Font("txmonospaced", 0, 16);
+            FontInfo newInfo = store(font, FONT_TERMINAL);
+            newInfo.setAntiAliasing(true);
+            return newInfo;
+        } else if (alias.compareToIgnoreCase(FontConst.FONT_FRAKTUR) == 0) {
+            Font font = new Font("Chomsky", 0, 16);
+            FontInfo newInfo = store(font, FontConst.FONT_FRAKTUR);
             newInfo.setAntiAliasing(true);
             return newInfo;
         }

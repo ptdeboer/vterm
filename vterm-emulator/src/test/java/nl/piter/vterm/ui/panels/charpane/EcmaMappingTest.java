@@ -9,7 +9,7 @@ package nl.piter.vterm.ui.panels.charpane;
 
 import org.junit.Test;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class EcmaMappingTest {
 

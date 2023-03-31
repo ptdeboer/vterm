@@ -166,7 +166,13 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
         int n = 234; //
         int m = 2;
         for (int c = 0; c < n; c++) {
-            this.setDrawStyle(c);
+            int style=c;
+            boolean hidden=((c&StyleChar.STYLE_HIDDEN)>0);
+            if (hidden) {
+                // bitflip hidden to strikethrough;
+                style=(style&~StyleChar.STYLE_HIDDEN)|StyleChar.STYLE_STRIKETHROUGH;
+            }
+            this.setDrawStyle(style); // filter hidden
             for (int i = 0; i < m; i++) {
                 int index = c * m + i;
                 int x = 1 + index % 78; // 6x13=78
@@ -184,7 +190,7 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
 
         offy += 4;
         // graphics
-        n = CharRenderer.graphOrg0.length();
+        n = CharRenderer.CHARSET_ORG.length();
         this.setCharSet(1, CHARSET_GRAPHICS.toString());
         this.setCharSet(1);
         for (int d = 0; d < 2; d++) {
@@ -192,7 +198,7 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
                 this.addDrawStyle(StyleChar.STYLE_BOLD);
 
             for (int x = 0; x < n; x++) {
-                putChar(CharRenderer.graphOrg0.charAt(x), marginx + x + d * n, offy);
+                putChar(CharRenderer.CHARSET_ORG.charAt(x), marginx + x + d * n, offy);
             }
         }
 

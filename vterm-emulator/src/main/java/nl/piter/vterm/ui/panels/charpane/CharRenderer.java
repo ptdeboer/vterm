@@ -29,8 +29,56 @@ public class CharRenderer {
     // Graphics Set:Reverse engineered from xterm codes:
     // echo <ESC>")0"<CTRL-N>"abcdefghijklmnopqrstuvwxyz"<CTRL-O>
     // Note, java uses 16-bit chars, following strings are utf-8 (!)
-    public final static String graphOrg0 = "_`abcdefghijklmnopqrstuvwxyz";
-    public final static String graphSet1 = " ◆▒␉␌␍␊°±␤␋┘┐┌└┼⎺⎻─⎼⎽├┤┴┬│≤≥";
+    public final static String CHARSET_ORG   = "_`abcdefghijklmnopqrstuvwxyz";
+    public final static String CHARSET_GRAPH = " ◆▒␉␌␍␊°±␤␋┘┐┌└┼⎺⎻─⎼⎽├┤┴┬│≤≥";
+
+
+    public static class FontMetrics {
+        private final FontInfo fontInfo;
+        private java.awt.Font fontPlain;
+        private int fontCharWidth;
+        private int fontDescent;
+        private int fontAscent;
+        private int fontCharHeight;
+        private Font fontBold;
+        private Font fontItalic;
+        private Font fontItalicBold;
+        private final int lineLeading = 0; // pixels
+        private Map<RenderingHints.Key, ?> renderingHints;
+
+        public FontMetrics(FontInfo info) {
+            this.fontInfo = info;
+            init();
+        }
+
+        public void init() {
+            // dummy image for font metrics:
+            Image dummyImage = new BufferedImage(48, 48, BufferedImage.TYPE_INT_ARGB);
+
+            String fontType = fontInfo.getFontFamily();
+            int fontStyle = fontInfo.getFontStyle();
+            int fontSize = fontInfo.getFontSize();
+            //
+            // metrics:
+            fontPlain = fontInfo.createFont();
+            fontBold = new Font(fontType, Font.BOLD, fontSize);
+            fontItalic = new Font(fontType, Font.ITALIC, fontSize);
+            fontItalicBold = new Font(fontType, Font.BOLD | Font.ITALIC, fontSize);
+
+            Graphics graphics = dummyImage.getGraphics();
+            graphics.setFont(fontPlain);
+            graphics.dispose();
+            java.awt.FontMetrics metrics = graphics.getFontMetrics();
+            this.fontDescent = metrics.getDescent();
+            this.fontAscent = metrics.getAscent();
+            this.fontCharHeight = metrics.getHeight();
+
+            // biggest char on the block:
+            this.fontCharWidth = metrics.charWidth('W');
+            renderingHints = fontInfo.getRenderingHints();
+            dummyImage.flush();
+        }
+    }
 
     // --- instance --- //
 
@@ -39,24 +87,25 @@ public class CharRenderer {
     private final boolean optionFatGraphicPipes = true;
     private ColorMap colorMap = ColorMap.COLOR_MAP_GREEN_ON_BLACK;
 
-    // === Font Metrics and Renderings ===
-    private final FontInfo fontInfo;
-    private java.awt.Font fontPlain;
-    private int fontCharWidth;
-    private int fontDescent;
-    private int fontAscent;
-    private int fontCharHeight;
-    private Font fontBold;
-    private Font fontItalic;
-    private Font fontItalicBold;
-    private final int lineLeading = 0; // pixels
-    private Map<RenderingHints.Key, ?> renderingHints;
-
+    private FontMetrics fontDef;
+    private FontMetrics altFontDef;
 
     public CharRenderer() {
         // initialize font metrics:
-        this.fontInfo = FontInfo.getFontInfo(FontConst.FONT_TERMINAL);
-        initFont(fontInfo);
+        this.fontDef = new FontMetrics(FontInfo.getFontInfo(FontConst.FONT_TERMINAL));
+        initCharSetMapping();
+    }
+
+    char[] graphicsMap = new char[256];
+
+    private void initCharSetMapping() {
+        for (int i = 0; i < CHARSET_ORG.length(); i++) {
+            graphicsMap[CHARSET_ORG.charAt(i)] = CHARSET_GRAPH.charAt(i);
+        }
+    }
+
+    public void setFontSize(int size) {
+        this.fontDef.fontInfo.setFontSize(size);
     }
 
     public void setColorMap(ColorMap map) {
@@ -67,31 +116,8 @@ public class CharRenderer {
      * Initialize font&font metrics
      */
     private void initFont(FontInfo finfo) {
-        String fontType = finfo.getFontFamily();
-        int fontStyle = finfo.getFontStyle();
-        int fontSize = finfo.getFontSize();
-
-        // dummy image for font metrics:
-        Image dummyImage = new BufferedImage(48, 48, BufferedImage.TYPE_INT_ARGB);
-
-        // metrics:
-        fontPlain = finfo.createFont();
-        fontBold = new Font(fontType, Font.BOLD, fontSize);
-        fontItalic = new Font(fontType, Font.ITALIC, fontSize);
-        fontItalicBold = new Font(fontType, Font.BOLD | Font.ITALIC, fontSize);
-        //
-        Graphics graphics = dummyImage.getGraphics();
-        graphics.setFont(fontPlain);
-        graphics.dispose();
-        FontMetrics metrics = graphics.getFontMetrics();
-        this.fontDescent = metrics.getDescent();
-        this.fontAscent = metrics.getAscent();
-        this.fontCharHeight = metrics.getHeight();
-
-        // biggest char on the block:
-        this.fontCharWidth = metrics.charWidth('W');
-        renderingHints = finfo.getRenderingHints();
-        dummyImage.flush();
+        this.fontDef = new FontMetrics(finfo);
+        this.altFontDef=null;
     }
 
     void renderChar(Graphics2D imageGraphics, StyleChar sChar, int xpos, int ypos, boolean paintBackground, boolean paintForeground) {
@@ -378,15 +404,7 @@ public class CharRenderer {
         int style = schar.style;
         byte[] bytes = schar.charBytes;
         int numBytes = schar.numBytes;
-
-        // lower left corner to start drawing (above descent):
-        int imgx = xpos;
-        int basey = ypos + getLineHeight() - fontDescent;// text center start above lower border
-        int midy = basey - fontAscent / 3;
-        String encoded;
-        encoded = new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
-
-        encoded = mapCharsetChars(schar.charSet, encoded);
+        FontMetrics fontDef = this.fontDef;
 
         // Render Character;
         // Blink ? => currently done in animation thread
@@ -395,22 +413,36 @@ public class CharRenderer {
         boolean bold = ((style & StyleChar.STYLE_BOLD) > 0);
         boolean italic = ((style & StyleChar.STYLE_ITALIC) > 0);
         boolean uberbold = ((style & StyleChar.STYLE_UBERBOLD) > 0);
+        boolean altFont = ((style & StyleChar.STYLE_FRAKTUR) > 0);
+
+        if (altFont && altFontDef!=null) {
+            fontDef = altFontDef;
+        }
+
+        // lower left corner to start drawing (above descent):
+        int imgx = xpos;
+        int basey = ypos + getLineHeight() - fontDef.fontDescent;// text center start above lower border
+        int midy = basey - fontDef.fontAscent / 3;
+        String encoded;
+
+        encoded = new String(bytes, 0, numBytes, StandardCharsets.UTF_8);
+        encoded = mapCharsetChars(schar.charSet, encoded);
 
         imageGraphics.setColor(fg);
 
         if (bold && !italic)
-            imageGraphics.setFont(fontBold);
+            imageGraphics.setFont(fontDef.fontBold);
         else if (!bold && italic)
-            imageGraphics.setFont(fontItalic);
+            imageGraphics.setFont(fontDef.fontItalic);
         else if (bold && italic)
-            imageGraphics.setFont(fontItalicBold);
+            imageGraphics.setFont(fontDef.fontItalicBold);
         else
-            imageGraphics.setFont(fontPlain);
+            imageGraphics.setFont(fontDef.fontPlain);
 
         Graphics2D g2d = imageGraphics;
 
-        if (this.fontInfo.getRenderingHints() != null) {
-            g2d.setRenderingHints(fontInfo.getRenderingHints());
+        if (fontDef.fontInfo.getRenderingHints() != null) {
+            g2d.setRenderingHints(fontDef.fontInfo.getRenderingHints());
         }
 
         // =========================
@@ -441,15 +473,11 @@ public class CharRenderer {
     }
 
     private String mapCharsetChars(String charset, String org) {
-        if (!isGraphicsCharSet(charset)) {
-            return org;
-        }
-
         char[] chars = new char[org.length()];
+        boolean isGraphics = isGraphicsCharSet(charset);
         for (int i = 0; i < org.length(); i++) {
-            chars[i] = this.mapGraphicsChar(org.charAt(i));
+            chars[i] = this.mapGraphicsChar(isGraphics, org.charAt(i));
         }
-
         return new String(chars);
     }
 
@@ -461,15 +489,15 @@ public class CharRenderer {
     }
 
     public void initFonts() {
-        initFont(this.fontInfo);
+        initFont(this.fontDef.fontInfo);
     }
 
-    private char mapGraphicsChar(char c) {
-        // linear lookup, could use mapping tables:
-        for (int i = 0; i < graphOrg0.length(); i++) {
-            if (graphOrg0.charAt(i) == c) {
-                return graphSet1.charAt(i);
+    public char mapGraphicsChar(boolean graphics, char c) {
+        if (graphics) {
+            if (graphicsMap[(byte) c] == (char) 0) {
+                return c;
             }
+            return graphicsMap[(byte) c];
         }
         return c;
     }
@@ -479,22 +507,24 @@ public class CharRenderer {
     }
 
     public Font getFontPlain() {
-        return fontPlain;
+        return fontDef.fontPlain;
     }
 
     void updateRenderingHints(Graphics2D graphics) {
-        if (this.renderingHints == null)
+        FontMetrics fontMetrics = fontDef;
+
+        if (fontMetrics.renderingHints == null)
             return;
 
-        RenderingHints.Key[] keys = renderingHints.keySet().toArray(new RenderingHints.Key[0]);
+        RenderingHints.Key[] keys = fontMetrics.renderingHints.keySet().toArray(new RenderingHints.Key[0]);
         for (RenderingHints.Key key : keys) {
-            Object value = renderingHints.get(key);
+            Object value = fontMetrics.renderingHints.get(key);
             graphics.setRenderingHint(key, value);
         }
     }
 
     public FontInfo getFontInfo() {
-        return fontInfo;
+        return fontDef.fontInfo;
     }
 
     public void renderCursor(Graphics graphics, int xpos, int ypos, Color cursorBlinkColor) {
@@ -515,30 +545,30 @@ public class CharRenderer {
 
     // Space between 'lowest descenders on the glyphs' and baseline.
     public int getFontDescent() {
-        return fontDescent;
+        return fontDef.fontDescent;
     }
 
     /**
      * Full Line Height =  Character Height + Line Spacing + Font Descent.
      */
     public int getLineHeight() {
-        return this.fontCharHeight + this.lineLeading;
+        return this.fontDef.fontCharHeight + this.fontDef.lineLeading;
     }
 
     public int getFontCharWidth() {
-        return fontCharWidth;
+        return fontDef.fontCharWidth;
     }
 
     public int getFontCharHeight() {
-        return fontCharHeight;
+        return fontDef.fontCharHeight;
     }
 
     public int getCharWidth() {
-        return this.fontCharWidth;
+        return this.fontDef.fontCharWidth;
     }
 
     public int getCharHeight() {
-        return this.fontCharHeight;
+        return this.fontDef.fontCharHeight;
     }
 
 }

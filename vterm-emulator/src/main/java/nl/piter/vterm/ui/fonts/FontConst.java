@@ -42,11 +42,8 @@ public class FontConst {
     // ---
 
     public static final String FONT_ICON_LABEL = "iconlabel";
-
     public static final String FONT_MONO_SPACED = "monospaced";
-
     public static final String FONT_DIALOG = "dialog";
-
     public static final String FONT_TERMINAL = "terminal";
-
+    public static final String FONT_FRAKTUR = "fraktur";
 }

@@ -21,19 +21,20 @@ public class StyleChar {
 
     public static final int STYLE_NONE = 0x0000;
     // ECMA order: bitnr 1-9 = SGR nr 1-9.
-    public static final int STYLE_BOLD = 0x01 << 1;
-    public static final int STYLE_FAINT = 0x01 << 2;
-    public static final int STYLE_ITALIC = 0x01 << 3;
-    public static final int STYLE_UNDERSCORE = 0x01 << 4;
-    public static final int STYLE_SLOW_BLINK = 0x01 << 5;
-    public static final int STYLE_FAST_BLINK = 0x01 << 6;
-    public static final int STYLE_INVERSE = 0x01 << 7;
-    public static final int STYLE_HIDDEN = 0x01 << 8;
-    public static final int STYLE_STRIKETHROUGH = 0x01 << 9;
+    public static final int STYLE_BOLD = 0x01 << 0;
+    public static final int STYLE_FAINT = 0x01 << 1;
+    public static final int STYLE_ITALIC = 0x01 << 2;
+    public static final int STYLE_UNDERSCORE = 0x01 << 3;
+    public static final int STYLE_SLOW_BLINK = 0x01 << 4;
+    public static final int STYLE_FAST_BLINK = 0x01 << 5;
+    public static final int STYLE_INVERSE = 0x01 << 6;
+    public static final int STYLE_HIDDEN = 0x01 << 7;
+    public static final int STYLE_STRIKETHROUGH = 0x01 << 8;
     // misc
-    public static final int STYLE_UBERBOLD = 0x01 << 10;
-    public static final int STYLE_DOUBLE_UNDERSCORE = 0x0001 << 11;
-    public static final int STYLE_FRAKTUR = 0x0001 << 13;
+    public static final int STYLE_FRAKTUR = 0x0001 << 19;
+    public static final int STYLE_DOUBLE_UNDERSCORE = 0x0001 << 20;
+    public static final int STYLE_UBERBOLD = 0x0001 << 21;
+
     // =====================================================
 
     protected int MAX_BYTES = 8;
@@ -134,22 +135,9 @@ public class StyleChar {
         return this.numBytes == 1 && (charBytes[0] == c);
     }
 
-
-//    // --- Generated --- //
-//
-//    @Override
-//    public boolean equals(Object o) {
-//        if (this == o) return true;
-//        if (o == null || getClass() != o.getClass()) return false;
-//        StyleChar styleChar = (StyleChar) o;
-//        return MAX_BYTES == styleChar.MAX_BYTES && numBytes == styleChar.numBytes && style == styleChar.style && foregroundColor == styleChar.foregroundColor && backgroundColor == styleChar.backgroundColor && alpha == styleChar.alpha && hasChanged == styleChar.hasChanged && Arrays.equals(charBytes, styleChar.charBytes) && Objects.equals(customForeground, styleChar.customForeground) && Objects.equals(charSet, styleChar.charSet);
-//    }
-//
-//    @Override
-//    public int hashCode() {
-//        int result = Objects.hash(MAX_BYTES, numBytes, style, foregroundColor, backgroundColor, customForeground, charSet, alpha, hasChanged);
-//        result = 31 * result + Arrays.hashCode(charBytes);
-//        return result;
-//    }
+    public char toChar() {
+        return new String(this.charBytes).charAt(0);
+    }
 
 }
+
