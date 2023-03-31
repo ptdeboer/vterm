@@ -1,4 +1,4 @@
-package nl.piter.vterm.emulator.tokens;
+package nl.piter.vterm.emulator.token;
 
 import nl.piter.vterm.api.ByteArray;
 import nl.piter.vterm.exceptions.VTxInvalidConfigurationException;

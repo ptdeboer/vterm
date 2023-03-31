@@ -5,7 +5,7 @@
  *     See LICENSE.txt for details.
  */
 //---
-package nl.piter.vterm.emulator.tokens;
+package nl.piter.vterm.emulator.token;
 
 import lombok.ToString;
 import nl.piter.vterm.emulator.Tokens;

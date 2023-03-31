@@ -117,7 +117,7 @@ public class Tokens {
         DEC_RESETMODE,
         DEC_SCREEN_ALIGNMENT,
         // ---
-        // prefix indicators, are NON-Terminating tokens (under construction)
+        // Prefix tokens, are NON-Terminating tokens use for optimized scanning.
         // ---
         CSI_PREFIX(false),
         OSC_GRAPHMODE_PREFIX(false),

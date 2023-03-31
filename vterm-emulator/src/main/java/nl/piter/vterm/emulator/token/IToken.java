@@ -5,7 +5,7 @@
  *     See LICENSE.txt for details.
  */
 //---
-package nl.piter.vterm.emulator.tokens;
+package nl.piter.vterm.emulator.token;
 
 import nl.piter.vterm.api.ByteArray;
 import nl.piter.vterm.emulator.Tokens;
@@ -47,4 +47,5 @@ public interface IToken extends ByteArray {
     default byte[] bytes() {
         return full();
     }
+
 }

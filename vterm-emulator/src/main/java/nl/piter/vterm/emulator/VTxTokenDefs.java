@@ -8,9 +8,9 @@
 package nl.piter.vterm.emulator;
 
 import lombok.extern.slf4j.Slf4j;
-import nl.piter.vterm.emulator.tokens.IToken;
-import nl.piter.vterm.emulator.tokens.SearchTree;
-import nl.piter.vterm.emulator.tokens.TokenDef;
+import nl.piter.vterm.emulator.token.IToken;
+import nl.piter.vterm.emulator.token.SearchTree;
+import nl.piter.vterm.emulator.token.TokenDef;
 import nl.piter.vterm.exceptions.VTxInvalidConfigurationException;
 
 import java.nio.charset.StandardCharsets;
@@ -266,6 +266,12 @@ public class VTxTokenDefs {
     }
 
     private byte[] getStringBytes(Object obj) {
+        // Beware of auto-boxing:
+        if (obj instanceof Byte) {
+            return new byte[]{(byte) obj};
+        } else if (obj instanceof Character) {
+            return new byte[]{(byte)(char)obj};
+        }
         return obj.toString().getBytes(StandardCharsets.UTF_8);
     }
 

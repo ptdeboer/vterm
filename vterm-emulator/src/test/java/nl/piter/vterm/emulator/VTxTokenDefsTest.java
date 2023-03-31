@@ -8,7 +8,7 @@
 package nl.piter.vterm.emulator;
 
 import lombok.extern.slf4j.Slf4j;
-import nl.piter.vterm.emulator.tokens.IToken;
+import nl.piter.vterm.emulator.token.IToken;
 import org.junit.Assert;
 import org.junit.Test;
 

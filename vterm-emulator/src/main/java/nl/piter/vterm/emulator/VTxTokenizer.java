@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import nl.piter.vterm.emulator.Tokens.Token;
 import nl.piter.vterm.emulator.Tokens.TokenOption;
 import nl.piter.vterm.emulator.Util.MiniBuffer;
-import nl.piter.vterm.emulator.tokens.IToken;
+import nl.piter.vterm.emulator.token.IToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

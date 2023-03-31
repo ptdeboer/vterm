@@ -1,4 +1,4 @@
-package nl.piter.vterm.emulator.tokens;
+package nl.piter.vterm.emulator.token;
 
 import lombok.extern.slf4j.Slf4j;
 import nl.piter.vterm.emulator.Tokens;
