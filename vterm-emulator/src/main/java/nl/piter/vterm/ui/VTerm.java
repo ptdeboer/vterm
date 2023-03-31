@@ -65,14 +65,12 @@ public class VTerm {
 
             vtermJFrame.updateFrameSize();
             if (shellChan != null) {
-                vtermJFrame.controller().startShellChannel(shellChan, true);
+                vtermJFrame.sessionManager().setStartURI(optionalLocation);
+                vtermJFrame.sessionManager().startShellChannel(shellChan);
             }
             else if (optionalLocation != null) {
-                try {
-                    vtermJFrame.controller().openLocation(sessionType, optionalLocation);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                vtermJFrame.sessionManager().setStartURI(optionalLocation);
+                vtermJFrame.sessionManager().startSession(sessionType, optionalLocation);
             }
 
         };

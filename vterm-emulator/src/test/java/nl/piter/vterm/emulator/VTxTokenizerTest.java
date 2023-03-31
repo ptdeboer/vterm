@@ -175,6 +175,16 @@ public class VTxTokenizerTest {
     }
 
     @Test
+    public void doubleGraphModeWithSTTerminator() throws IOException {
+        // ST= ESC-'\';
+        byte[] seq = new byte[]{CTRL_ESC, ']', '0', ';', 'X', CTRL_ESC,'\\', CTRL_ESC, ']', '0', ';', 'Y', CTRL_ESC,'\\'};
+        List<Tokens.Token> tokens = Arrays.asList(Tokens.Token.OSC_GRAPHMODE, Tokens.Token.OSC_GRAPHMODE);
+        List<Integer> values = Arrays.asList(0, 0);
+        List<String> strValues = Arrays.asList("X", "Y");
+        testSequence(seq, tokens, values, strValues);
+    }
+
+    @Test
     public void decSetModeMulti() throws IOException {
         byte[] seq = new byte[]{CTRL_ESC, '[', '?', '1', 'h', CTRL_ESC, '[', '?', '2', 'l'};
         List<Tokens.Token> tokens = Arrays.asList(Tokens.Token.DEC_SETMODE, Tokens.Token.DEC_RESETMODE);
@@ -246,7 +256,6 @@ public class VTxTokenizerTest {
         assertThat(token).isEqualTo(expected);
         assertThat(tokenizer.args().strArg()).isEqualTo(expectedArg);
     }
-
 
     protected void testSequence(byte[] bytes, Tokens.Token expected, int graphmodeInt, String graphmodeStr) throws IOException {
         InputStream inps = new ByteArrayInputStream(bytes);

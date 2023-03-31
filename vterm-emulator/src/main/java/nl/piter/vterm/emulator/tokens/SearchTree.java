@@ -53,6 +53,7 @@ public class SearchTree<T extends ByteArray> {
 
             // Add both full and partial matching tokens.
             node = node.index[id];
+            // Important: add matches in order, so that first added will be first matched (PREFIX tokens,etc)
             node.add(value);
 
             if (level == index.length - 1) {
@@ -74,6 +75,9 @@ public class SearchTree<T extends ByteArray> {
         return find(pattern, patternIndex, false);
     }
 
+    /**
+     * Tree Search using fixed size 256-width byte index.
+     */
     public T find(byte[] search, int indexLen, boolean fullMatch) {
         TreeEl<T> node = root;
         int level = 0;

@@ -16,7 +16,7 @@ import java.net.URI;
 import static nl.piter.vterm.ui.VTermSessionManager.SESSION_SHELLCHANNEL;
 
 /**
- * API binding (from Platinum/VBrowser).
+ * API binding (for Platinum/VBrowser).
  */
 public class VTermStarter {
 
@@ -28,9 +28,13 @@ public class VTermStarter {
 
     private VTermChannelProvider vTermChannelProvider;
 
+    public VTermStarter() {
+    }
+
     public VTermStarter withChannelProvider(VTermChannelProvider vTermChannelProvider) {
-        this.vTermChannelProvider = vTermChannelProvider;
-        return this;
+        VTermStarter starter = new VTermStarter();
+        starter.vTermChannelProvider=vTermChannelProvider;
+        return starter;
     }
 
     public VTerm start(String[] args) {

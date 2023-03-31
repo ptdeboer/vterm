@@ -7,6 +7,9 @@
 //---
 package nl.piter.vterm.api;
 
+/**
+ * Properties for the Emulator and Channel implementations (not UI).
+ */
 public class TermConst {
 
     public final static String SSH_XFORWARDING_ENABLED = "ssh.xforwarding.enabled";

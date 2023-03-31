@@ -80,7 +80,12 @@ public class PtyChannel implements ShellChannel {
     public void connect() throws IOException {
 
         String cwd = !isEmpty(startingPath) ? startingPath : SysEnv.sysEnv().getUserHome();
-        Map<String, String> allEnv = (env != null) ? env : new HashMap<>();
+
+        Map<String, String> allEnv=new HashMap<>();
+        allEnv.putAll(System.getenv());
+        if (env!=null) {
+            allEnv.putAll(env);
+        }
         allEnv.put("TERM", options.getTermType());
 
         log.warn("commands: {}; path={}; env={},", commands, cwd, allEnv);

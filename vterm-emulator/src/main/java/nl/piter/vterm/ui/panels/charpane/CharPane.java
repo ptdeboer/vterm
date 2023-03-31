@@ -624,11 +624,11 @@ public class CharPane extends JComponent implements CharacterTerminal, ActionLis
     }
 
     public String getCharSetName() {
-        return Util.toStringOrNull(charSets[charSet]); // may be null;
+        return Util.object2string(charSets[charSet]); // may be null;
     }
 
     public String getCharSetName(int index) {
-        return Util.toStringOrNull(charSets[index]); // may be null;
+        return Util.object2string(charSets[index]); // may be null;
     }
 
     public void setCharSet(int nr) {

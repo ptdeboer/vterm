@@ -29,10 +29,10 @@ public class UtilStringTest {
 
     @Test
     public void hexstr2bytes() {
-        assertThat(Util.hex2bytes("")).isEqualTo(new byte[0]);
-        assertThat(Util.hex2bytes("00")).isEqualTo(new byte[]{(byte) 0});
-        assertThat(Util.hex2bytes("1234")).isEqualTo(new byte[]{(byte) 0x12, (byte) 0x34});
-        assertThat(Util.hex2bytes("DEADBEEF")).isEqualTo(new byte[]{(byte) 0xDE, (byte) 0xAD, (byte) 0xBE, (byte) 0xEF});
+        assertThat(Util.hexstr2bytes("")).isEqualTo(new byte[0]);
+        assertThat(Util.hexstr2bytes("00")).isEqualTo(new byte[]{(byte) 0});
+        assertThat(Util.hexstr2bytes("1234")).isEqualTo(new byte[]{(byte) 0x12, (byte) 0x34});
+        assertThat(Util.hexstr2bytes("DEADBEEF")).isEqualTo(new byte[]{(byte) 0xDE, (byte) 0xAD, (byte) 0xBE, (byte) 0xEF});
     }
 
     @Test

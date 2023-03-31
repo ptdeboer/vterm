@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Collection of String and Byte util methods.
+ */
 public class Util {
 
     public static char[] HEXVALUES = new char[]{
@@ -88,11 +91,11 @@ public class Util {
         return ((str == null) || (str.equals("")));
     }
 
-    public static String toStringOrNull(Object objectOrNull) {
+    public static String object2string(Object objectOrNull) {
         return (objectOrNull != null) ? objectOrNull.toString() : null;
     }
 
-    public static String toStringOrEmpty(Object objectOrNull) {
+    public static String object2stringOrEmpty(Object objectOrNull) {
         return (objectOrNull != null) ? objectOrNull.toString() : "";
     }
 
@@ -102,7 +105,7 @@ public class Util {
      * @param hexString for example "DEADBEAF" as String.
      * @return byte array, for example: byte[]{0xDE,0xAD,0xBE,0xAF}
      */
-    public static byte[] hex2bytes(String hexString) {
+    public static byte[] hexstr2bytes(String hexString) {
         if (hexString == null)
             return null;
 

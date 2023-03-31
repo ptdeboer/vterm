@@ -323,37 +323,37 @@ public class VTermController implements WindowListener, EmulatorListener,
         return Integer.parseInt(value);
     }
 
-    protected void openLocation(String sessionType, URI loc) throws IOException {
-        // parse URI:
-
-        String scheme = loc.getScheme();
-        String host = loc.getHost();
-
-        if (isEmpty(host)) {
-            host = "localhost";
-        }
-
-        String user = loc.getUserInfo();
-
-        if (isEmpty(user)) {
-            user = SysEnv.sysEnv().getUserName();
-        }
-
-        int port = loc.getPort();
-        if (port <= 0)
-            port = 22;
-
-        String path = loc.getPath();
-
-        try {
-            sessionManager().setSessionType(sessionType);
-            sessionManager().setStartURI(new URI(scheme, user, host, port, path, null, null));
-        } catch (URISyntaxException e) {
-            throw new IOException(e.getMessage(), e);
-        }
-
-        sessionManager().startSession();
-    }
+//    protected void openLocation(String sessionType, URI loc) throws IOException {
+//        // parse URI:
+//
+//        String scheme = loc.getScheme();
+//        String host = loc.getHost();
+//
+//        if (isEmpty(host)) {
+//            host = "localhost";
+//        }
+//
+//        String user = loc.getUserInfo();
+//
+//        if (isEmpty(user)) {
+//            user = SysEnv.sysEnv().getUserName();
+//        }
+//
+//        int port = loc.getPort();
+//        if (port <= 0)
+//            port = 22;
+//
+//        String path = loc.getPath();
+//
+//        try {
+//            sessionManager().setSessionType(sessionType);
+//            sessionManager().setStartURI(new URI(scheme, user, host, port, path, null, null));
+//        } catch (URISyntaxException e) {
+//            throw new IOException(e.getMessage(), e);
+//        }
+//
+//        sessionManager().startSession();
+//    }
 
     private void parseLocation(String scheme, String locstr) {
         try {
@@ -391,13 +391,6 @@ public class VTermController implements WindowListener, EmulatorListener,
         }
     }
 
-    public void startShellChannel(ShellChannel shellChan, boolean start) {
-        sessionManager().setShellChannel(shellChan);
-        sessionManager().setSessionType(SESSION_SHELLCHANNEL);
-        if (start) {
-            sessionManager().startSession();
-        }
-    }
 
     public VTermSessionManager sessionManager() {
         return this.vtermFrame.sessionManager();

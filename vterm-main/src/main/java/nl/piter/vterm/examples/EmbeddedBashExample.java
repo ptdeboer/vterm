@@ -8,6 +8,7 @@
 package nl.piter.vterm.examples;
 
 import nl.piter.vterm.emulator.VTermChannelProvider;
+import nl.piter.vterm.sys.SysEnv;
 import nl.piter.vterm.ui.VTermSessionManager;
 import nl.piter.vterm.ui.panels.VTermPanel;
 
@@ -28,11 +29,13 @@ public class EmbeddedBashExample {
     }
 
     public EmbeddedBashExample() {
+        // Custom UI:
         JFrame frame = new JFrame();
         frame.setLayout(new BorderLayout());
         VTermPanel vtermPanel = new VTermPanel();
         frame.add(vtermPanel, BorderLayout.CENTER);
 
+        // Custom UI Controller:
         CustomControllerAdaptor controller = new CustomControllerAdaptor();
         vtermManager = new VTermSessionManager(controller, controller, new VTermChannelProvider(), vtermPanel);
 
@@ -41,7 +44,7 @@ public class EmbeddedBashExample {
     }
 
     private void start() throws URISyntaxException {
-        vtermManager.startSession("PTY", new URI("file:///"));
+        vtermManager.startSession(VTermSessionManager.SESSION_PTY, new URI("file://"+ SysEnv.sysEnv().getUserHome()));
     }
 
 }

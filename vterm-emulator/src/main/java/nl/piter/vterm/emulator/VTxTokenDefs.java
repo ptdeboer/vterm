@@ -41,15 +41,16 @@ public class VTxTokenDefs {
      * </pre>
      */
     private static final Object[][] tokenDefs = {
-            // Single char tokens.
+            // Single char tokens: 000 - 007 (octal)
             {CTRL_NUL, NUL}, // => Warning: 0x00 => Empty String
-            {CTRL_ETX, SOH},
+            {CTRL_SOH, SOH},
+            {CTRL_ETX, ETX},
             {CTRL_STX, STX},
             {CTRL_EOT, EOT},
             {CTRL_ENQ, ENQ},
             {CTRL_ACK, ACK},
             {CTRL_BEL, BEL},
-            //
+            // 010-017 (octal)
             {CTRL_BS, BS},
             {CTRL_HT, HT},
             {CTRL_LF, LF},
@@ -113,12 +114,12 @@ public class VTxTokenDefs {
             {CTRL_ESC + "P", PARAMETER_STRING, CTRL_ESC + "\\", DCS_DEVICE_CONTROL_STRING},
             {CTRL_ESC + "_", PARAMETER_STRING, CTRL_ESC + "\\", APP_PROGRAM_CMD},
             // OSC GRAPHMODE (xterm): <ESC>-]
-            {CTRL_OSC_PREFIX, PARAMETER_GRAPHMODE, (char) -1, OSC_GRAPHMODE_PREFIX},
+            {CTRL_OSC_PREFIX, PARAMETER_GRAPHMODE, (char)-1, OSC_GRAPHMODE_PREFIX},
             {CTRL_OSC_PREFIX, PARAMETER_GRAPHMODE, CTRL_BEL, OSC_GRAPHMODE},
             {CTRL_OSC_PREFIX, PARAMETER_GRAPHMODE, CTRL_ESC + "\\", OSC_GRAPHMODE},
             // ----------------------------------------------------------------
             // CSI Sequences: <ESC>-[
-            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, (char) -1, CSI_PREFIX, "Start of CSI Prefix"},
+            {CTRL_CSI_PREFIX, PARAMETER_INTEGERS, (char)-1, CSI_PREFIX, "Start of CSI Prefix"},
             // 3 char CSIs:
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'h', DEC_SETMODE},
             {CTRL_CSI_PREFIX + "?", PARAMETER_INTEGERS, 'l', DEC_RESETMODE},

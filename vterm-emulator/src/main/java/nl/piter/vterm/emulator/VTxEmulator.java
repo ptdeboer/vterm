@@ -719,7 +719,7 @@ public class VTxEmulator implements Emulator {
         if (strArg.startsWith("+q")) {
             String[] args = strArg.substring("+q".length()).split(";");
             for (String hexArg : args) {
-                String val = new String(Util.hex2bytes(hexArg), StandardCharsets.UTF_8);
+                String val = new String(Util.hexstr2bytes(hexArg), StandardCharsets.UTF_8);
                 log.debug("- got VAL: {}", val);
             }
         }
@@ -1266,8 +1266,6 @@ public class VTxEmulator implements Emulator {
     public void sendPrimaryDA() {
 
         // Report from 'vttest' when using it inside xterm.
-        // For some reason when connecting through ssh, this works, but not using
-        // the homebrew 'ptty.lxe'  file. (is does when forking a 'bin/csh' ).
         // Report is:    <27> [ ? 1 ; 2 c  -- means VT100 with AVO (could be a VT102)
         // Legend: AVO = Advanced Video Option
 
@@ -1314,7 +1312,7 @@ public class VTxEmulator implements Emulator {
             return;
         }
 
-        // Thanks to AWT this can happen concurrently...
+        // Beware: AWT calls emulator concurrently with emulator thread.
         synchronized (this.outputStream) {
             this.outputStream.write(code);
             this.outputStream.flush();

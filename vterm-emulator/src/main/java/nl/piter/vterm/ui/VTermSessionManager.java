@@ -74,6 +74,12 @@ public class VTermSessionManager implements Runnable {
         startSession();
     }
 
+    public void startShellChannel(ShellChannel shellChan) {
+        setShellChannel(shellChan);
+        setSessionType(SESSION_SHELLCHANNEL);
+        startSession();
+    }
+
     /**
      * Start session, will only return when session has ended
      */
