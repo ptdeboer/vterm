@@ -144,7 +144,7 @@ public class VTermController implements WindowListener, EmulatorListener,
                 cmd = "/bin/bash";
             }
             if (isEmpty(args)) {
-                cmd = "-i";
+                args = "-i";
             }
 
             String[] fields = new String[]{"Shell path (no arguments)", "Arguments"};
