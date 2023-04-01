@@ -5,7 +5,7 @@
 
     <groupId>nl.piter.vterm</groupId>
     <artifactId>vterm</artifactId>
-    <version>2.3.3-SNAPSHOT</version>
+    <version>2.3.3</version>
 
     <modules>
         <module>vterm-emulator</module>
