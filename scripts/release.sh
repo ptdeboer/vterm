@@ -60,11 +60,11 @@ doMvn clean verify
 doGit add pom.xml **/pom.xml
 doGit commit -m "New release version=${VERSION}"
 
-# Create/merge/deploy release to VERSION
-doGit checkout release
+# Create/merge/deploy master to VERSION
+doGit checkout master
 doGit merge develop
 doGit tag "v${VERSION}"
-doGit push origin release
+doGit push origin master
 doGit push origin "v${VERSION}"
 doMvn clean package verify deploy
 
