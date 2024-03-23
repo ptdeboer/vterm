@@ -14,6 +14,7 @@ Origin
 Started in 2005, this VTerm emulator has been part of VL-e's VBrowser and Platinum's VBrowser 2.0.
 This is now a stand-alone component.
 
+See Virtual Laboratory for eScience: http://www.vl-e.nl/
 
 Build
 ---
