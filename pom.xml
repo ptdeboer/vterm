@@ -5,7 +5,7 @@
 
     <groupId>nl.piter.vterm</groupId>
     <artifactId>vterm</artifactId>
-    <version>2.4.1-SNAPSHOT</version>
+    <version>2.4.1</version>
 
     <modules>
         <module>vterm-emulator</module>
@@ -78,9 +78,9 @@
 
     <repositories>
         <repository>
-            <id>jcenter-id</id>
-            <name>JCenter</name>
-            <url>https://jcenter.bintray.com/</url>
+            <id>mvnrepository-id</id>
+            <name>mvnrepository.com</name>
+            <url>https://mvnrepository.com/</url>
         </repository>
     </repositories>
 
